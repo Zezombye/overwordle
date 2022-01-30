@@ -6,7 +6,7 @@ settings {
         "modeName": "OverWordle"
     },
     "gamemodes": {
-        "skirmish": {
+        "ffa": {
             "enabledMaps": [
                 "workshopIsland"
             ]
@@ -33,9 +33,17 @@ playervar Message 0
 playervar OriginalFacingDIR 125
 playervar TEXTMAKER 127
 
+#!define KBSP " "
+
 
 rule "▒▒▒▒▒▒▒▒▒▒ Created By AlaskaWolf, Based on Josinbird's cursor menu ▒▒▒▒▒▒▒▒▒▒▒▒":
 
+rule "debug hud":
+    print("x: {}, y: {}".format(
+        angleDifference(horizontalAngleOfDirection(localPlayer.getFacingDirection()), horizontalAngleOfDirection(localPlayer.OriginalFacingDIR)),
+        angleDifference(verticalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.OriginalFacingDIR)) - 0.2
+    ))
+#区Γ┌┏
 
 rule "Toggle menu":
     @Event eachPlayer
@@ -47,15 +55,15 @@ rule "Toggle menu":
 
 
 rule "The keyboard itself":
-    createInWorldText([player for player in getAllPlayers() if player.TEXTMAKER], "     [{0}{1}]".format(localPlayer.Message, "|" if getTotalTimeElapsed() % 1.1 < 0.5 else "  "), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.OriginalFacingDIR, angleToDirection(horizontalAngleOfDirection(localPlayer.OriginalFacingDIR), verticalAngleOfDirection(localPlayer.OriginalFacingDIR) - 90))) + ((1.55 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.OriginalFacingDIR), verticalAngleOfDirection(localPlayer.OriginalFacingDIR) - 90))) + 3 * localPlayer.OriginalFacingDIR))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
-    createInWorldText([player for player in getAllPlayers() if player.TEXTMAKER], "q    w    e    r    t    y    u    i    o    p          ", updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.OriginalFacingDIR, angleToDirection(horizontalAngleOfDirection(localPlayer.OriginalFacingDIR), verticalAngleOfDirection(localPlayer.OriginalFacingDIR) - 90))) + ((0.8 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.OriginalFacingDIR), verticalAngleOfDirection(localPlayer.OriginalFacingDIR) - 90))) + 3 * localPlayer.OriginalFacingDIR))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
-    createInWorldText([player for player in getAllPlayers() if player.TEXTMAKER], "     a    s    d    f    g    h    j    k    l               ", updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.OriginalFacingDIR, angleToDirection(horizontalAngleOfDirection(localPlayer.OriginalFacingDIR), verticalAngleOfDirection(localPlayer.OriginalFacingDIR) - 90))) + ((0.5 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.OriginalFacingDIR), verticalAngleOfDirection(localPlayer.OriginalFacingDIR) - 90))) + 3 * localPlayer.OriginalFacingDIR))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
-    createInWorldText([player for player in getAllPlayers() if player.TEXTMAKER], "                  z    x    c    v    b    n    m                              ", updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.OriginalFacingDIR, angleToDirection(horizontalAngleOfDirection(localPlayer.OriginalFacingDIR), verticalAngleOfDirection(localPlayer.OriginalFacingDIR) - 90))) + ((0.2 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.OriginalFacingDIR), verticalAngleOfDirection(localPlayer.OriginalFacingDIR) - 90))) + 3 * localPlayer.OriginalFacingDIR))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
-    createInWorldText([player for player in getAllPlayers() if player.TEXTMAKER], "    [ Enter ]          [    ←    ]", updateEveryTick(localPlayer.getEyePosition() + (100 * (0.6 * (crossProduct(localPlayer.OriginalFacingDIR, angleToDirection(horizontalAngleOfDirection(localPlayer.OriginalFacingDIR), verticalAngleOfDirection(localPlayer.OriginalFacingDIR) - 90))) + ((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.OriginalFacingDIR), verticalAngleOfDirection(localPlayer.OriginalFacingDIR) - 90))) + 3 * localPlayer.OriginalFacingDIR))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
+    @Event eachPlayer
+    createInWorldText(eventPlayer, "▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒", updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.8 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer, " ▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"\&fullwidth_space;", updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.5 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer, "  ▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"▒"KBSP"\&fullwidth_space;"KBSP"\&fullwidth_space;"KBSP"\&fullwidth_space;", updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.2 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer, "    [ Enter￣＿｜│]          [￣＿  ←    ]", updateEveryTick(localPlayer.getEyePosition() + (100 * (0.6 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
 
 
 rule "Create menu cursor":
-    createInWorldText([player for player in getAllPlayers() if player.TEXTMAKER], "▲", updateEveryTick(localPlayer.getEyePosition() + (100 * (angleDifference(horizontalAngleOfDirection(localPlayer.getFacingDirection()), horizontalAngleOfDirection(localPlayer.OriginalFacingDIR)) * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((angleDifference(verticalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.OriginalFacingDIR)) - 0.2) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_STRING_AND_COLOR, Color.ORANGE, SpecVisibility.DEFAULT)
+    createInWorldText([player for player in getAllPlayers() if player.TEXTMAKER], "\&top_left_arrow;", updateEveryTick(localPlayer.getEyePosition() + (100 * (angleDifference(horizontalAngleOfDirection(localPlayer.getFacingDirection()), horizontalAngleOfDirection(localPlayer.OriginalFacingDIR)) * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((angleDifference(verticalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.OriginalFacingDIR)) - 0.2) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_STRING_AND_COLOR, Color.ORANGE, SpecVisibility.DEFAULT)
 
 
 rule "Open menu":
@@ -65,11 +73,11 @@ rule "Open menu":
     
     eventPlayer.setAimSpeed(10)
     eventPlayer.OriginalFacingDIR = eventPlayer.getFacingDirection()
-    eventPlayer.startCamera(eventPlayer.getEyePosition() + eventPlayer.OriginalFacingDIR * 2, eventPlayer.getEyePosition() + eventPlayer.OriginalFacingDIR * 999, 800)
+    #eventPlayer.startCamera(eventPlayer.getEyePosition() + eventPlayer.OriginalFacingDIR * 2, eventPlayer.getEyePosition() + eventPlayer.OriginalFacingDIR * 999, 800)
     eventPlayer.setPrimaryFireEnabled(false)
     eventPlayer.setSecondaryFireEnabled(false)
-    eventPlayer.disableHeroHUD()
-    eventPlayer.disableGamemodeHud()
+    #eventPlayer.disableHeroHUD()
+    #eventPlayer.disableGamemodeHud()
     #eventPlayer.Message = ""
 
 
@@ -78,14 +86,14 @@ rule "Close menu":
     @Condition (not eventPlayer.isDummy()) == true
     @Condition (not eventPlayer.TEXTMAKER) == true
     
-    eventPlayer.stopCamera()
+    #eventPlayer.stopCamera()
     eventPlayer.setAimSpeed(100)
     eventPlayer.setPrimaryFireEnabled(true)
     eventPlayer.setSecondaryFireEnabled(true)
-    eventPlayer.enableHeroHud()
-    eventPlayer.enableGamemodeHud()
+    #eventPlayer.enableHeroHud()
+    #eventPlayer.enableGamemodeHud()
 
-
+/*
 rule "Cursor bounds":
     @Event eachPlayer
     @Condition eventPlayer.TEXTMAKER == true
@@ -95,7 +103,7 @@ rule "Cursor bounds":
     wait()
     if RULE_CONDITION:
         goto RULE_START
-
+*/
 
 /*
 rule "detect (debug) *":
