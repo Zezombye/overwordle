@@ -29,15 +29,13 @@ globalvar CharSize 4
 
 #Player variables
 
-playervar Message 0
-playervar OriginalFacingDIR 125
-playervar TEXTMAKER 127
+playervar originalFacingDir
+playervar hasKeyboardOpened
 
 playervar kbFirstRow = w"QWERTYUIOP"
 playervar kbSecondRow = w"ASDFGHJKLM"
 playervar kbThirdRow = w"ZXCVBNM"
 
-#!define KBSP " "
 #!define SENSIVITY 0.2
 #!define KEYBOARD_INDENT 0.06
 #!define KEYBOARD_TOP_LEFT_X -1.42
@@ -45,33 +43,64 @@ playervar kbThirdRow = w"ZXCVBNM"
 #!define HORIZONTAL_KEY_DISTANCE 0.27111111
 #!define VERTICAL_KEY_DISTANCE 0.3
 #!define KEY_SIDE_LENGTH 0.24
-#!define CURSOR_X (angleDifference(horizontalAngleOfDirection(localPlayer.getFacingDirection()), horizontalAngleOfDirection(localPlayer.OriginalFacingDIR)) * SENSIVITY)
-#!define CURSOR_Y (-angleDifference(verticalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.OriginalFacingDIR)) * SENSIVITY)
+#!define CURSOR_X ((angleDifference(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), horizontalAngleOfDirection(eventPlayer.originalFacingDir)) * SENSIVITY) - eventPlayer.additionalXOffset)
+#!define CURSOR_Y ((-angleDifference(verticalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.originalFacingDir)) * SENSIVITY) - eventPlayer.additionalYOffset)
+
+#!define ENTER_TOP_LEFT_X -1.42
+#!define ENTER_TOP_LEFT_Y 1.72
+#!define ENTER_BOTTOM_RIGHT_X -0.74
+#!define ENTER_BOTTOM_RIGHT_Y 1.97
+
+#!define BACKSPACE_TOP_LEFT_X 0.66
+#!define BACKSPACE_TOP_LEFT_Y 1.74
+#!define BACKSPACE_BOTTOM_RIGHT_X 1.34
+#!define BACKSPACE_BOTTOM_RIGHT_Y 1.97
+
+#!define BORDER_TOP_LEFT_X -1.71
+#!define BORDER_TOP_LEFT_Y 0.64
+#!define BORDER_BOTTOM_RIGHT_X 1.53
+#!define BORDER_BOTTOM_RIGHT_Y 2.13
+
+#!define getKeyboardSelectedKey() updateEveryTick((\
+    [1,2,3,4,5,6,7,8,9,10][(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X)/HORIZONTAL_KEY_DISTANCE))] if KEYBOARD_TOP_LEFT_Y <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+KEY_SIDE_LENGTH and (CURSOR_X-KEYBOARD_TOP_LEFT_X)%HORIZONTAL_KEY_DISTANCE <= HORIZONTAL_KEY_DISTANCE else\
+    [11,12,13,14,15,16,17,18,19,20][(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT)/HORIZONTAL_KEY_DISTANCE))] if KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE+KEY_SIDE_LENGTH and (CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT)%HORIZONTAL_KEY_DISTANCE <= HORIZONTAL_KEY_DISTANCE else\
+    [21,22,23,24,25,26,27][(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT*2)/HORIZONTAL_KEY_DISTANCE))] if KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE*2 <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE*2+KEY_SIDE_LENGTH and (CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT*2)%HORIZONTAL_KEY_DISTANCE <= HORIZONTAL_KEY_DISTANCE else\
+    31 if CURSOR_X >= ENTER_TOP_LEFT_X and CURSOR_Y >= ENTER_TOP_LEFT_Y and CURSOR_X <= ENTER_BOTTOM_RIGHT_X and CURSOR_Y <= ENTER_BOTTOM_RIGHT_Y else\
+    32 if CURSOR_X >= BACKSPACE_TOP_LEFT_X and CURSOR_Y >= BACKSPACE_TOP_LEFT_Y and CURSOR_X <= BACKSPACE_BOTTOM_RIGHT_X and CURSOR_Y <= BACKSPACE_BOTTOM_RIGHT_Y else\
+     null\
+) or [""])
+
+playervar selectedKeyboardKey
+playervar additionalXOffset = 0
+playervar additionalYOffset = 0
 
 rule "▒▒▒▒▒▒▒▒▒▒ Created By AlaskaWolf, Based on Josinbird's cursor menu ▒▒▒▒▒▒▒▒▒▒▒▒":
 
-rule "debug hud":
-    print("x: {}, y: {}".format(CURSOR_X, CURSOR_Y))
-    print("Letter: {}".format((
-        hostPlayer.kbFirstRow.charAt(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X)/HORIZONTAL_KEY_DISTANCE)) if KEYBOARD_TOP_LEFT_Y <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+KEY_SIDE_LENGTH and (CURSOR_X-KEYBOARD_TOP_LEFT_X)%HORIZONTAL_KEY_DISTANCE <= KEY_SIDE_LENGTH else
-        hostPlayer.kbSecondRow.charAt(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT)/HORIZONTAL_KEY_DISTANCE)) if KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE+KEY_SIDE_LENGTH and (CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT)%HORIZONTAL_KEY_DISTANCE <= KEY_SIDE_LENGTH else
-        hostPlayer.kbThirdRow.charAt(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT*2)/HORIZONTAL_KEY_DISTANCE)) if KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE*2 <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE*2+KEY_SIDE_LENGTH and (CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT*2)%HORIZONTAL_KEY_DISTANCE <= KEY_SIDE_LENGTH else null
 
-    ) or [""]))
+rule "debug hud":
+    @Event eachPlayer
+
+    print("x: {}, y: {}".format(CURSOR_X, CURSOR_Y))
+    print("Letter: {}".format(getKeyboardSelectedKey()))
+    print("currentGuess: |{}|".format(hostPlayer.currentGuess))
 #区Γ┌┏
 
-rule "Toggle menu":
+rule "Toggle keyboard":
     @Event eachPlayer
     @Condition (not eventPlayer.isDummy()) == true
     @Condition eventPlayer.isHoldingButton(Button.INTERACT) == true
     @Condition (not eventPlayer.isCommunicatingEmote()) == true
     
-    eventPlayer.TEXTMAKER = not eventPlayer.TEXTMAKER
+    eventPlayer.hasKeyboardOpened = not eventPlayer.hasKeyboardOpened
 
 
 rule "The keyboard itself":
     @Event eachPlayer
-    createInWorldText(eventPlayer, "{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}".format(
+
+    chase(eventPlayer.selectedKeyboardKey, getKeyboardSelectedKey(), rate=999, ChaseReeval.DESTINATION_AND_RATE)
+
+    #First row
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, " {} {} {} {} {} {} {} {} {} {} ".format(
         eventPlayer.kbFirstRow.charAt(0),
         eventPlayer.kbFirstRow.charAt(1),
         eventPlayer.kbFirstRow.charAt(2),
@@ -82,8 +111,24 @@ rule "The keyboard itself":
         eventPlayer.kbFirstRow.charAt(7),
         eventPlayer.kbFirstRow.charAt(8),
         eventPlayer.kbFirstRow.charAt(9)
-    ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.8 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
-    createInWorldText(eventPlayer, "  {}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}".format(
+    ), updateEveryTick(eventPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(eventPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + ((0.8 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, {
+        null: "",
+        1: "[{}]　 　 　 　 　 　 　 　 　 ".format(eventPlayer.kbFirstRow.charAt(0)),
+        2: " 　[{}]　 　 　 　 　 　 　 　 ".format(eventPlayer.kbFirstRow.charAt(1)),
+        3: " 　 　[{}]　 　 　 　 　 　 　 ".format(eventPlayer.kbFirstRow.charAt(2)),
+        4: " 　 　 　[{}]　 　 　 　 　 　 ".format(eventPlayer.kbFirstRow.charAt(3)),
+        5: " 　 　 　 　[{}]　 　 　 　 　 ".format(eventPlayer.kbFirstRow.charAt(4)),
+        6: " 　 　 　 　 　[{}]　 　 　 　 ".format(eventPlayer.kbFirstRow.charAt(5)),
+        7: " 　 　 　 　 　 　[{}]　 　 　 ".format(eventPlayer.kbFirstRow.charAt(6)),
+        8: " 　 　 　 　 　 　 　[{}]　 　 ".format(eventPlayer.kbFirstRow.charAt(7)),
+        9: " 　 　 　 　 　 　 　 　[{}]　 ".format(eventPlayer.kbFirstRow.charAt(8)),
+        10: " 　 　 　 　 　 　 　 　 　[{}]".format(eventPlayer.kbFirstRow.charAt(9)),
+    }[eventPlayer.selectedKeyboardKey]
+    , updateEveryTick(eventPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(eventPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + ((0.8 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.GREEN, SpecVisibility.DEFAULT)
+
+    #Second row
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, "   {} {} {} {} {} {} {} {} {} {} ".format(
         eventPlayer.kbSecondRow.charAt(0),
         eventPlayer.kbSecondRow.charAt(1),
         eventPlayer.kbSecondRow.charAt(2),
@@ -94,8 +139,24 @@ rule "The keyboard itself":
         eventPlayer.kbSecondRow.charAt(7),
         eventPlayer.kbSecondRow.charAt(8),
         eventPlayer.kbSecondRow.charAt(9)
-    ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.5 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
-    createInWorldText(eventPlayer, "    {}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"{}"KBSP"\&fullwidth_space;"KBSP"\&fullwidth_space;"KBSP"\&fullwidth_space;".format(
+    ), updateEveryTick(eventPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(eventPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + ((0.5 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, {
+        null: "",
+        11: "  [{}]　 　 　 　 　 　 　 　 　 ".format(eventPlayer.kbSecondRow.charAt(0)),
+        12: "   　[{}]　 　 　 　 　 　 　 　 ".format(eventPlayer.kbSecondRow.charAt(1)),
+        13: "   　 　[{}]　 　 　 　 　 　 　 ".format(eventPlayer.kbSecondRow.charAt(2)),
+        14: "   　 　 　[{}]　 　 　 　 　 　 ".format(eventPlayer.kbSecondRow.charAt(3)),
+        15: "   　 　 　 　[{}]　 　 　 　 　 ".format(eventPlayer.kbSecondRow.charAt(4)),
+        16: "   　 　 　 　 　[{}]　 　 　 　 ".format(eventPlayer.kbSecondRow.charAt(5)),
+        17: "   　 　 　 　 　 　[{}]　 　 　 ".format(eventPlayer.kbSecondRow.charAt(6)),
+        18: "   　 　 　 　 　 　 　[{}]　 　 ".format(eventPlayer.kbSecondRow.charAt(7)),
+        19: "   　 　 　 　 　 　 　 　[{}]　 ".format(eventPlayer.kbSecondRow.charAt(8)),
+        20: "   　 　 　 　 　 　 　 　 　[{}]".format(eventPlayer.kbSecondRow.charAt(9)),
+    }[eventPlayer.selectedKeyboardKey]
+    , updateEveryTick(eventPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(eventPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + ((0.5 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.GREEN, SpecVisibility.DEFAULT)
+
+    #Third row
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, "     {} {} {} {} {} {} {} \&fullwidth_space; \&fullwidth_space; \&fullwidth_space; ".format(
         eventPlayer.kbThirdRow.charAt(0),
         eventPlayer.kbThirdRow.charAt(1),
         eventPlayer.kbThirdRow.charAt(2),
@@ -103,31 +164,45 @@ rule "The keyboard itself":
         eventPlayer.kbThirdRow.charAt(4),
         eventPlayer.kbThirdRow.charAt(5),
         eventPlayer.kbThirdRow.charAt(6)
-    ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.2 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
-    createInWorldText(eventPlayer, "Ｅ \&fullwidth_space; \&fullwidth_space;                                                   ", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.08 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 3, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
-    createInWorldText(eventPlayer, " ｎ ｅ                                                    ", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.08 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 3, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
-    createInWorldText(eventPlayer, " ｔ ｒ                                                ", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.08 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 3, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
-    createInWorldText(eventPlayer, "                                \&left_arrow;", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.09 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
-    createInWorldText(eventPlayer, "              ｜￣￣｜                     ｜￣￣｜    ", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
-    createInWorldText(eventPlayer, "  ￣￣￣                                 ￣￣￣    ", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
-    createInWorldText(eventPlayer, "  ＿＿＿                                 ＿＿＿    ", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
+    ), updateEveryTick(eventPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(eventPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + ((0.2 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.WHITE, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer, {
+        null: "",
+        21: "    [{}]　 　 　 　 　 　 　 　 　 ".format(eventPlayer.kbThirdRow.charAt(0)),
+        22: "     　[{}]　 　 　 　 　 　 　 　 ".format(eventPlayer.kbThirdRow.charAt(1)),
+        23: "     　 　[{}]　 　 　 　 　 　 　 ".format(eventPlayer.kbThirdRow.charAt(2)),
+        24: "     　 　 　[{}]　 　 　 　 　 　 ".format(eventPlayer.kbThirdRow.charAt(3)),
+        25: "     　 　 　 　[{}]　 　 　 　 　 ".format(eventPlayer.kbThirdRow.charAt(4)),
+        26: "     　 　 　 　 　[{}]　 　 　 　 ".format(eventPlayer.kbThirdRow.charAt(5)),
+        27: "     　 　 　 　 　 　[{}]　 　 　 ".format(eventPlayer.kbThirdRow.charAt(6)),
+    }[eventPlayer.selectedKeyboardKey]
+    , updateEveryTick(eventPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(eventPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + ((0.2 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.GREEN, SpecVisibility.DEFAULT)
+
+    #Enter buttons
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, "Ｅ \&fullwidth_space; \&fullwidth_space;                                                   ", updateEveryTick(eventPlayer.getEyePosition() + (100 * (((-0.08 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 3, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_STRING_AND_COLOR, Color.WHITE if eventPlayer.selectedKeyboardKey != 31 else Color.GREEN, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, " ｎ ｅ                                                    ", updateEveryTick(eventPlayer.getEyePosition() + (100 * (((-0.08 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 3, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_STRING_AND_COLOR,  Color.WHITE if eventPlayer.selectedKeyboardKey != 31 else Color.GREEN, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, " ｔ ｒ                                                ", updateEveryTick(eventPlayer.getEyePosition() + (100 * (((-0.08 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 3, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_STRING_AND_COLOR,  Color.WHITE if eventPlayer.selectedKeyboardKey != 31 else Color.GREEN, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, "                                \&left_arrow;", updateEveryTick(eventPlayer.getEyePosition() + (100 * (((-0.09 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_STRING_AND_COLOR,  Color.WHITE if eventPlayer.selectedKeyboardKey != 32 else Color.GREEN, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, "              ｜￣￣｜                     ｜￣￣｜    ", updateEveryTick(eventPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, "  ￣￣￣                                 ￣￣￣    ", updateEveryTick(eventPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, "  ＿＿＿                                 ＿＿＿    ", updateEveryTick(eventPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))) + 3 * eventPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
 
 
 rule "Create menu cursor":
-    createInWorldText([player for player in getAllPlayers() if player.TEXTMAKER], "\&top_left_arrow;", 
+    @Event eachPlayer
+    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, "\&top_left_arrow;", 
     updateEveryTick(
-        localPlayer.getEyePosition() 
+        eventPlayer.getEyePosition() 
         + (
             100 * (
-                SENSIVITY * angleDifference(horizontalAngleOfDirection(localPlayer.getFacingDirection()), horizontalAngleOfDirection(localPlayer.OriginalFacingDIR)) 
+                max(min(CURSOR_X, BORDER_BOTTOM_RIGHT_X), BORDER_TOP_LEFT_X)
                 * (
-                    crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))
+                    crossProduct(eventPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))
                 )
                 + (
-                    SENSIVITY * (angleDifference(verticalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.OriginalFacingDIR))) 
-                    * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))
+                    -1 * max(min(CURSOR_Y, BORDER_BOTTOM_RIGHT_Y), BORDER_TOP_LEFT_Y)
+                    * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))
                 ) 
-                + 3 * localPlayer.getFacingDirection()
+                + 3 * eventPlayer.getFacingDirection()
             )
         )
     ), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_STRING_AND_COLOR, Color.ORANGE, SpecVisibility.DEFAULT)
@@ -136,14 +211,15 @@ rule "Create menu cursor":
 rule "Open menu":
     @Event eachPlayer
     @Condition (not eventPlayer.isDummy()) == true
-    @Condition eventPlayer.TEXTMAKER == true
+    @Condition eventPlayer.hasKeyboardOpened == true
     
     eventPlayer.setAimSpeed(10)
-    eventPlayer.OriginalFacingDIR = eventPlayer.getFacingDirection()
-    #eventPlayer.startCamera(eventPlayer.getEyePosition() + eventPlayer.OriginalFacingDIR * 2, eventPlayer.getEyePosition() + eventPlayer.OriginalFacingDIR * 999, 800)
+    eventPlayer.originalFacingDir = eventPlayer.getFacingDirection()
+    chase(eventPlayer.additionalXOffset, eventPlayer.additionalXOffset + max(0, CURSOR_X - BORDER_BOTTOM_RIGHT_X) - max(0, BORDER_TOP_LEFT_X - CURSOR_X), rate=99999, ChaseReeval.DESTINATION_AND_RATE)
+    chase(eventPlayer.additionalYOffset, eventPlayer.additionalYOffset + max(0, CURSOR_Y - BORDER_BOTTOM_RIGHT_Y) - max(0, BORDER_TOP_LEFT_Y - CURSOR_Y), rate=99999, ChaseReeval.DESTINATION_AND_RATE)
     eventPlayer.setPrimaryFireEnabled(false)
     eventPlayer.setSecondaryFireEnabled(false)
-    #eventPlayer.disableHeroHUD()
+    eventPlayer.disableHeroHUD()
     #eventPlayer.disableGamemodeHud()
     #eventPlayer.Message = ""
 
@@ -151,88 +227,29 @@ rule "Open menu":
 rule "Close menu":
     @Event eachPlayer
     @Condition (not eventPlayer.isDummy()) == true
-    @Condition (not eventPlayer.TEXTMAKER) == true
+    @Condition (not eventPlayer.hasKeyboardOpened) == true
     
     #eventPlayer.stopCamera()
     eventPlayer.setAimSpeed(100)
+    stopChasingVariable(eventPlayer.additionalXOffset)
+    stopChasingVariable(eventPlayer.additionalYOffset)
+    eventPlayer.additionalXOffset = 0
+    eventPlayer.additionalYOffset = 0
     eventPlayer.setPrimaryFireEnabled(true)
     eventPlayer.setSecondaryFireEnabled(true)
-    #eventPlayer.enableHeroHud()
+    eventPlayer.enableHeroHud()
     #eventPlayer.enableGamemodeHud()
 
-/*
-rule "Cursor bounds":
+rule "Press key":
     @Event eachPlayer
-    @Condition eventPlayer.TEXTMAKER == true
-    @Condition (abs(angleDifference(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), horizontalAngleOfDirection(eventPlayer.OriginalFacingDIR))) > 6.2 / 2 + 0.05 or abs(angleDifference(verticalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.OriginalFacingDIR))) > 3.6 / 2 + 0.05) == true
-    
-    eventPlayer.setFacing(angleToDirection(min(max(horizontalAngleOfDirection(eventPlayer.OriginalFacingDIR) - angleDifference(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), horizontalAngleOfDirection(eventPlayer.OriginalFacingDIR)), horizontalAngleOfDirection(eventPlayer.OriginalFacingDIR) - 6.2 / 2), horizontalAngleOfDirection(eventPlayer.OriginalFacingDIR) + 6.2 / 2), min(max(verticalAngleOfDirection(eventPlayer.OriginalFacingDIR) - angleDifference(verticalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.OriginalFacingDIR)), verticalAngleOfDirection(eventPlayer.OriginalFacingDIR) - 3.6 / 2), verticalAngleOfDirection(eventPlayer.OriginalFacingDIR) + 3.6 / 2)), Relativity.TO_WORLD)
-    wait()
-    if RULE_CONDITION:
-        goto RULE_START
-*/
-
-
-rule "▒▒▒▒▒▒  Set Globals (Letters to type, key positions)":
-    CHAR_ARRAY = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "!", "@", "-", "+", "=", "_", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "(", ")", "A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "'", "\"", "Z", "X", "C", "V", "B", "N", "M", "<", ">", ",", ".", "/", "?"]
-    XpositionARRAY = [-2.16, -1.872, -1.572, -1.272, -0.97, -0.665, -0.36, -0.04, 0.277, 0.584, 0.868, 1.168, 1.468, 1.72, 2.02, 2.29, -1.75, -1.4, -1.074, -0.783, -0.49, -0.2, 0.115, 0.4, 0.692, 0.999, 1.275, 1.53, -1.59, -1.29, -0.99, -0.69, -0.39, -0.05, 0.25, 0.55, 0.85, 1.108, 1.35, 1.59, -1.46, -1.16, -0.86, -0.54, -0.24, 0.08, 0.428, 0.745, 1.024, 1.317, 1.54, 1.79, 2.088]
-    YpositionARRAY = [-0.325, -0.325, -0.325, -0.325, -0.325, -0.325, -0.325, -0.325, -0.325, -0.325, -0.325, -0.325, -0.325, -0.325, -0.325, -0.325, -0.61, -0.61, -0.61, -0.61, -0.61, -0.61, -0.61, -0.61, -0.61, -0.61, -0.61, -0.61, -0.91, -0.91, -0.91, -0.91, -0.91, -0.91, -0.91, -0.91, -0.91, -0.91, -0.91, -0.91, -1.19, -1.19, -1.19, -1.19, -1.17, -1.17, -1.17, -1.19, -1.19, -1.19, -1.19, -1.19, -1.19]
-    #TestIndex = 40
-    #0.32 DONT CHANGE
-    CharSize = 0.32
-
-
-/*
-rule "Test index debug text*":
-    hudHeader(getAllPlayers(), "testing index: [{0}] [{1}]".format(TestIndex, CHAR_ARRAY[TestIndex]), HudPosition.RIGHT, 0, Color.ORANGE, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
-*/
-
-/*
-rule "Test index increase*":
-    @Event eachPlayer
-    @Condition eventPlayer.isHoldingButton(Button.ABILITY_1) == true
-    
-    TestIndex += 1
-*/
-
-/*
-rule "Test index decrease*":
-    @Event eachPlayer
-    @Condition eventPlayer.isHoldingButton(Button.ABILITY_2) == true
-    
-    TestIndex -= 1
-*/
-
-/*
-rule "vvvv (you can a loop to any these) vvvv *":
-*/
-
-rule "TYPE IT    [ A ]":
-    @Event eachPlayer
-    @Condition eventPlayer.TEXTMAKER == true
-    @Condition eventPlayer.isHoldingButton(Button.PRIMARY_FIRE) == true
-    @Condition (len([_ for _, i in XpositionARRAY if abs(angleDifference(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), horizontalAngleOfDirection(eventPlayer.OriginalFacingDIR)) - XpositionARRAY[i]) <= CharSize / 2 and abs(angleDifference(verticalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.OriginalFacingDIR)) - YpositionARRAY[i]) <= CharSize / 2])) > null
-    
-    eventPlayer.Message = "{0}{1}".format(eventPlayer.Message, CHAR_ARRAY[XpositionARRAY.index((sorted([_ for _, i in XpositionARRAY if abs(angleDifference(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), horizontalAngleOfDirection(eventPlayer.OriginalFacingDIR)) - XpositionARRAY[i]) <= CharSize / 2 and abs(angleDifference(verticalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.OriginalFacingDIR)) - YpositionARRAY[i]) <= CharSize / 2], lambda _, i: abs(angleDifference(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), horizontalAngleOfDirection(eventPlayer.OriginalFacingDIR)) - XpositionARRAY[i])))[0])])
-
-
-rule "TYPE IT SPACE  [______]":
-    @Event eachPlayer
-    @Condition eventPlayer.TEXTMAKER == true
-    @Condition eventPlayer.isHoldingButton(Button.PRIMARY_FIRE) == true
-    @Condition abs(angleDifference(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), horizontalAngleOfDirection(eventPlayer.OriginalFacingDIR)) - 0) <= 1.1 / 2
-    @Condition abs(angleDifference(verticalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.OriginalFacingDIR)) - -1.499) <= 0.39 / 2
-    
-    eventPlayer.Message = "{0}{1}".format(eventPlayer.Message, " ")
-
-
-rule "UN-TYPE IT    [_<--BKSP_]":
-    @Event eachPlayer
-    @Condition eventPlayer.TEXTMAKER == true
-    @Condition eventPlayer.isHoldingButton(Button.PRIMARY_FIRE) == true
-    @Condition abs(angleDifference(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), horizontalAngleOfDirection(eventPlayer.OriginalFacingDIR)) - 1.3) <= 1 / 2
-    @Condition abs(angleDifference(verticalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.OriginalFacingDIR)) - -1.499) <= 0.39 / 2
-    
-    eventPlayer.Message = eventPlayer.Message.substring(0, strLen(eventPlayer.Message) - 1)
-
-
+    @Condition eventPlayer.hasKeyboardOpened
+    @Condition eventPlayer.isHoldingButton(Button.PRIMARY_FIRE)
+    if eventPlayer.selectedKeyboardKey:
+        if eventPlayer.selectedKeyboardKey == 31:
+            if strLen(eventPlayer.currentGuess) == nbLetters:
+                eventPlayer.guesses.append(eventPlayer.currentGuess)
+                eventPlayer.currentGuess = ""
+        elif eventPlayer.selectedKeyboardKey == 32:
+            eventPlayer.currentGuess = eventPlayer.currentGuess.substring(0, strLen(eventPlayer.currentGuess)-1)
+        elif strLen(eventPlayer.currentGuess) < nbLetters:
+            eventPlayer.currentGuess = "{}{}".format(eventPlayer.currentGuess, eventPlayer.kbFirstRow.charAt(eventPlayer.selectedKeyboardKey-1) if eventPlayer.selectedKeyboardKey <= 10 else eventPlayer.kbSecondRow.charAt(eventPlayer.selectedKeyboardKey-11) if eventPlayer.selectedKeyboardKey <= 20 else eventPlayer.kbThirdRow.charAt(eventPlayer.selectedKeyboardKey-21))
