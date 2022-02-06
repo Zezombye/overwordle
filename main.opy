@@ -1,13 +1,8 @@
 
-globalvar wordToGuess = w"FANNNYF"
-
-globalvar test1 = wordToGuess.split("")
-globalvar test2 = wordToGuess.split(w"N")
-globalvar test3 = wordToGuess.split(w"O")
-
+globalvar wordToGuess = w"REINHARDT"
 
 globalvar maxGuesses = 7
-globalvar nbLetters = 7
+globalvar nbLetters = 9
 
 enum Color:
     WORDLE_GREEN = rgba(0, 80, 0, 200),
@@ -23,6 +18,9 @@ enum Color:
     KB_GRAY = rgb(50, 50, 50),
     KB_SELECTION = Color.BLUE,
 
+
+#!define VERSION "1.0"
+#!define CODE "FX999"
 
 #!define LETTER_A 0
 #!define LETTER_B 1
@@ -99,11 +97,17 @@ playervar hasGuessedWord = false
 
 playervar currentGuess = ""
 playervar i
-globalvar undefined
+playervar hasPassedWelcomeScreen = false
+playervar mercyRegenChase = 0
+
+globalvar currentRound = 0
+globalvar nbRounds = 5
+globalvar roundDuration = 30
 
 #!include "keyboard.opy"
 #!include "words.opy"
 #!include "settings.opy"
+#!include "welcomeScreen.opy"
 
 #!suppressWarnings w_not_total_fullwidth
 
@@ -112,16 +116,49 @@ rule "skip assemble heroes":
     setMatchTime(0)
 
 rule "":
+    disableGamemodeCompletion()
     wait(5)
-    createDummy(Hero.ANA, Team.ALL, 2, null, null)
+    createDummy(Hero.ANA, Team.ALL, 11, null, null)
 
-rule "init":
+
+rule "init player":
     @Event eachPlayer
+    @Condition isGameInProgress()
+    @Condition eventPlayer.hasSpawned()
+    eventPlayer.setStatusEffect(null, Status.UNKILLABLE, 9999)
+    chase(eventPlayer.mercyRegenChase, 9999, rate=1, ChaseReeval.DESTINATION_AND_RATE)
+
+rule "regen":
+    @Event eachPlayer
+    @Condition eventPlayer.mercyRegenChase > 1
+    eventPlayer.startHoT(null, 9999, 50)
     
-rule "create hud text":
+rule "stop regen":
+    @Event eachPlayer
+    @Condition eventPlayer.mercyRegenChase < 1
+    eventPlayer.stopAllHoT()
+    
+rule "stop hot on dmg":
+    @Event playerTookDamage
+    victim.mercyRegenChase = 0
+
+rule "":
+    @Condition isGameInProgress()
+    while currentRound < nbRounds:
+        getAllPlayers().guesses = []
+        getAllPlayers().guessResults = []
+        getAllPlayers().currentGuess = ""
+        getAllPlayers().hasGuessedWord = false
+        bigMessage(getAllPlayers(), "Round {}/{}".format(currentRound+1, nbRounds))
+        setMatchTime(roundDuration)
+        wait(roundDuration)
+        currentRound++
+    declarePlayerVictory(sorted(getAllPlayers(), lambda p: -p.getScore())[0])
+
+    
+rule "create wordle hud text":
 
     @Condition isGameInProgress()
-    wait(1)
     
     #current line - black bg with gray outline
     createProgressBarInWorldText(localPlayer, 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
@@ -226,7 +263,18 @@ rule "create hud text":
     #error message
 
     hudText(localPlayer, localPlayer.errorMsg or [""], "\z", "\z", HudPosition.TOP, -10, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
-    hudSubtext(localPlayer, " \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", HudPosition.TOP, -8, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
+    hudSubtext(localPlayer, " \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", HudPosition.TOP, -8, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
+    hudText(localPlayer, "Press {} to enter/exit keyboard".format("[{}]".format(buttonString(Button.INTERACT)) if strContains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buttonString(Button.INTERACT).charAt(0)) else buttonString(Button.INTERACT)) if not localPlayer.hasKeyboardOpened and not localPlayer.hasGuessedWord and len(localPlayer.guesses) < maxGuesses else "", "\z", "\z", HudPosition.TOP, -7, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
+    hudSubtext(localPlayer, " \n\n\n\n\n\n\n", HudPosition.TOP, -6, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
+
+    #top left instructions
+    hudHeader(localPlayer.hasPassedWelcomeScreen, "   Overwordle   \n\n\n", HudPosition.LEFT, -10, Color.PURPLE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
+    #hudText(localPlayer.hasPassedWelcomeScreen, "Overwordle", null, "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ", HudPosition.RIGHT, -10, Color.PURPLE, null, null, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
+    hudSubtext(localPlayer.hasPassedWelcomeScreen, "ѝ"VERSION" | discord.gg/YP544CH | code: "CODE, HudPosition.RIGHT, -10, Color.ORANGE, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
+    hudText(localPlayer.hasPassedWelcomeScreen, "", " ", " • Green = right place                                                                                                                                                              ", HudPosition.RIGHT, -9, null, null, Color.KB_GREEN, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
+    hudText(localPlayer.hasPassedWelcomeScreen, "", null, " • Yellow = wrong place                                                                                                                                                              ", HudPosition.RIGHT, -8, null, null, Color.KB_YELLOW, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
+    hudText(localPlayer.hasPassedWelcomeScreen, "", null, " • Gray = wrong letter                                                                                                                                                              ", HudPosition.RIGHT, -7, null, null, Color.GRAY, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
+
     #hudText(localPlayer, "", " ", " ", HudPosition.TOP, 999 if localPlayer.errorMsg else -9, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
     #createProgressBarInWorldText(localPlayer, 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n■■■■■\n■■■■■\n■■■■■\n■■■■■\n■■■■■\n■■■■■\n\n\n\n\n", updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection() * 100), 999, Clip.NONE, rgba(0,0,0,0), Color.GREEN, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
 

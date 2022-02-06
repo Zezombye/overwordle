@@ -1,8 +1,8 @@
 #!mainFile "main.opy"
 settings {
     "main": {
-        "description": "OverWordle BETA by Zezombye\n\nUses Keyboard by AlaskaWolf and Josbird's Cursor Menu",
-        "modeName": "OverWordle"
+        "description": "OverWordle "+VERSION+" by Zezombye | Code: "+CODE+"\n\nUses Keyboard by AlaskaWolf and Josbird's Cursor Menu",
+        "modeName": "OverWordle "+VERSION
     },
     "gamemodes": {
         "ffa": {
@@ -20,11 +20,6 @@ settings {
     "heroes": {
         "allTeams": {
             "general": {
-                "damageDealt%": 10,
-                "damageReceived%": 10,
-                "healingDealt%": 500,
-                "healingReceived%": 500,
-                "health%": 500,
                 "combatUltGen%": 0,
                 "passiveUltGen%": 0
             }

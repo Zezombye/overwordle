@@ -67,14 +67,17 @@ enum KbLayout:
 
 playervar kbLayout = KbLayout.AZERTY
 
+rule "":
+    @Event eachPlayer
+    print("{}: {}".format(eventPlayer, eventPlayer.getHorizontalFacingAngle()))
 
-rule "debug hud":
+/*rule "debug hud":
     @Event eachPlayer
 
     print("x: {}, y: {}".format(CURSOR_X, CURSOR_Y))
     print("Letter: {}".format(getKeyboardSelectedKey()))
     print("currentGuess: |{}|".format(hostPlayer.currentGuess))
-    print("nb texts: {}".format(getNumberOfTextIds()))
+    print("nb texts: {}".format(getNumberOfTextIds()))*/
 
 rule "Determine keyboard layout":
     @Event eachPlayer
@@ -94,12 +97,24 @@ rule "Determine keyboard layout":
 
 rule "Toggle keyboard":
     @Event eachPlayer
-    @Condition (not eventPlayer.isDummy()) == true
+    @Condition isGameInProgress()
     @Condition eventPlayer.isHoldingButton(Button.INTERACT) == true
     @Condition (not eventPlayer.isCommunicatingEmote()) == true
+    @Condition len(eventPlayer.guesses) < maxGuesses
+    @Condition not eventPlayer.hasGuessedWord
     
     eventPlayer.hasKeyboardOpened = not eventPlayer.hasKeyboardOpened
 
+
+rule "guesses exhausted":
+    @Event eachPlayer
+    @Condition eventPlayer.hasGuessedWord or len(eventPlayer.guesses) >= maxGuesses
+    eventPlayer.hasKeyboardOpened = false
+    if len(eventPlayer.guesses) >= maxGuesses:
+        smallMessage(eventPlayer, "Ran out of guesses!")
+    else:
+        smallMessage(eventPlayer, "Guessed it! +{} points".format(10+(maxGuesses - len(eventPlayer.guesses))**2))
+        eventPlayer.addToScore(10+(maxGuesses - len(eventPlayer.guesses))**2)
 
 rule "Get keyboard key":
     @Event eachPlayer
@@ -333,6 +348,7 @@ rule "Open menu":
     @Condition (not eventPlayer.isDummy()) == true
     @Condition eventPlayer.hasKeyboardOpened == true
     
+    eventPlayer.setStatusEffect(null, Status.PHASED_OUT, 9999)
     eventPlayer.setAimSpeed(10)
     eventPlayer.originalFacingDir = eventPlayer.getFacingDirection()
     eventPlayer.setPrimaryFireEnabled(false)
@@ -355,6 +371,7 @@ rule "Close menu":
     @Condition (not eventPlayer.isDummy()) == true
     @Condition (not eventPlayer.hasKeyboardOpened) == true
     
+    eventPlayer.clearStatusEffect(Status.PHASED_OUT)
     eventPlayer.setAimSpeed(100)
     eventPlayer.additionalXOffset = 0
     eventPlayer.additionalYOffset = 0
@@ -377,6 +394,8 @@ rule "Press key":
     if eventPlayer.selectedKeyboardKey and not (eventPlayer.kbLayout == KbLayout.AZERTY and eventPlayer.selectedKeyboardKey == 27) and not (eventPlayer.kbLayout != KbLayout.AZERTY and eventPlayer.selectedKeyboardKey == 20):
         if eventPlayer.selectedKeyboardKey == 31:
             if strLen(eventPlayer.currentGuess) == nbLetters:
+                if eventPlayer.currentGuess == wordToGuess:
+                    eventPlayer.hasGuessedWord = true
                 for eventPlayer.i in range(nbLetters):
                     if eventPlayer.currentGuess.charAt(eventPlayer.i) == wordToGuess.charAt(eventPlayer.i):
                         eventPlayer.guessResults.append(GuessResult.GOOD)
