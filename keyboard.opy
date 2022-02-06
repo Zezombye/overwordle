@@ -29,6 +29,7 @@ playervar kbThirdRow
 #!define CURSOR_X ((angleDifference(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), horizontalAngleOfDirection(eventPlayer.originalFacingDir)) * SENSIVITY) - eventPlayer.additionalXOffset)
 #!define CURSOR_Y ((-angleDifference(verticalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.originalFacingDir)) * SENSIVITY) - eventPlayer.additionalYOffset)
 
+
 #!define ENTER_TOP_LEFT_X -1.42
 #!define ENTER_TOP_LEFT_Y 1.72
 #!define ENTER_BOTTOM_RIGHT_X -0.74
@@ -81,6 +82,37 @@ rule "":
 
 rule "Determine keyboard layout":
     @Event eachPlayer
+    @Condition eventPlayer.hasSpawned()
+    @Condition not eventPlayer.hasPassedWelcomeScreen
+    @Condition eventPlayer.isHoldingButton(Button.JUMP)
+    eventPlayer.startFacing(
+        angleToDirection(30, 0) if any([button == "A" or button == "W" for button in [
+            buttonString(Button.ABILITY_1),
+            buttonString(Button.ABILITY_2),
+            buttonString(Button.CROUCH),
+            buttonString(Button.INTERACT),
+            buttonString(Button.JUMP),
+            buttonString(Button.MELEE),
+            buttonString(Button.PRIMARY_FIRE),
+            buttonString(Button.RELOAD),
+            buttonString(Button.SECONDARY_FIRE),
+            buttonString(Button.ULTIMATE),
+        ]]) or "{}".format(Map.PRACTICE_RANGE) == "Champ de tir"
+        else angleToDirection(60, 0) if "{}".format(Map.PRACTICE_RANGE) == "Trainingsbereich"
+        else angleToDirection(90, 0), 999999, Relativity.TO_WORLD, FacingReeval.DIRECTION_AND_TURN_RATE)
+
+    #Because of precision errors, we round to the hundredth.
+    waitUntil(round(eventPlayer.getHorizontalFacingAngle()*100)/100 in [30, 60, 90], 3)
+
+    if round(eventPlayer.getHorizontalFacingAngle()*100)/100 == 30:
+        eventPlayer.kbLayout = KbLayout.AZERTY
+    elif round(eventPlayer.getHorizontalFacingAngle()*100)/100 == 60:
+        eventPlayer.kbLayout = KbLayout.QWERTZ
+    else:
+        eventPlayer.kbLayout = KbLayout.QWERTY
+
+    eventPlayer.stopFacing()
+
     if eventPlayer.kbLayout == KbLayout.AZERTY:
         eventPlayer.kbFirstRow = w"AZERTYUIOP"
         eventPlayer.kbSecondRow = w"QSDFGHJKLM"
@@ -97,7 +129,7 @@ rule "Determine keyboard layout":
 
 rule "Toggle keyboard":
     @Event eachPlayer
-    @Condition isGameInProgress()
+    @Condition gameStatus == GameStatus.ROUND_IN_PROGRESS
     @Condition eventPlayer.isHoldingButton(Button.INTERACT) == true
     @Condition (not eventPlayer.isCommunicatingEmote()) == true
     @Condition len(eventPlayer.guesses) < maxGuesses
@@ -108,18 +140,26 @@ rule "Toggle keyboard":
 
 rule "guesses exhausted":
     @Event eachPlayer
-    @Condition eventPlayer.hasGuessedWord or len(eventPlayer.guesses) >= maxGuesses
+    @Condition eventPlayer.hasGuessedWord or len(eventPlayer.guesses) >= maxGuesses or gameStatus != GameStatus.ROUND_IN_PROGRESS
     eventPlayer.hasKeyboardOpened = false
     if len(eventPlayer.guesses) >= maxGuesses:
         smallMessage(eventPlayer, "Ran out of guesses!")
-    else:
+    elif eventPlayer.hasGuessedWord:
         smallMessage(eventPlayer, "Guessed it! +{} points".format(10+(maxGuesses - len(eventPlayer.guesses))**2))
         eventPlayer.addToScore(10+(maxGuesses - len(eventPlayer.guesses))**2)
 
 rule "Get keyboard key":
     @Event eachPlayer
 
-    chase(eventPlayer.selectedKeyboardKey, getKeyboardSelectedKey(), rate=999, ChaseReeval.DESTINATION_AND_RATE)
+    chase(eventPlayer.selectedKeyboardKey, updateEveryTick(
+        [1,2,3,4,5,6,7,8,9,10][(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X)/HORIZONTAL_KEY_DISTANCE))] if KEYBOARD_TOP_LEFT_Y <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+KEY_SIDE_LENGTH else
+        [11,12,13,14,15,16,17,18,19,20][(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT)/HORIZONTAL_KEY_DISTANCE))] if KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE+KEY_SIDE_LENGTH else
+        [21,22,23,24,25,26,27][(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT*2)/HORIZONTAL_KEY_DISTANCE))] if KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE*2 <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE*2+KEY_SIDE_LENGTH else
+        31 if CURSOR_X >= ENTER_TOP_LEFT_X and CURSOR_Y >= ENTER_TOP_LEFT_Y and CURSOR_X <= ENTER_BOTTOM_RIGHT_X and CURSOR_Y <= ENTER_BOTTOM_RIGHT_Y else
+        32 if CURSOR_X >= BACKSPACE_TOP_LEFT_X and CURSOR_Y >= BACKSPACE_TOP_LEFT_Y and CURSOR_X <= BACKSPACE_BOTTOM_RIGHT_X and CURSOR_Y <= BACKSPACE_BOTTOM_RIGHT_Y else
+        null
+    )
+    , rate=999, ChaseReeval.DESTINATION_AND_RATE)
 
 rule "Display keyboard":
 
@@ -348,6 +388,9 @@ rule "Open menu":
     @Condition (not eventPlayer.isDummy()) == true
     @Condition eventPlayer.hasKeyboardOpened == true
     
+    chase(eventPlayer.additionalXOffset, updateEveryTick(eventPlayer.additionalXOffset + max(0, CURSOR_X - BORDER_BOTTOM_RIGHT_X) - max(0, BORDER_TOP_LEFT_X - CURSOR_X)), rate=9999, ChaseReeval.DESTINATION_AND_RATE)
+    chase(eventPlayer.additionalYOffset, updateEveryTick(eventPlayer.additionalYOffset + max(0, CURSOR_Y - BORDER_BOTTOM_RIGHT_Y) - max(0, BORDER_TOP_LEFT_Y - CURSOR_Y)), rate=9999, ChaseReeval.DESTINATION_AND_RATE)
+
     eventPlayer.setStatusEffect(null, Status.PHASED_OUT, 9999)
     eventPlayer.setAimSpeed(10)
     eventPlayer.originalFacingDir = eventPlayer.getFacingDirection()
@@ -355,7 +398,7 @@ rule "Open menu":
     eventPlayer.setSecondaryFireEnabled(false)
     eventPlayer.disableHeroHUD()
 
-
+/*
 rule "chases are bad":
     @Event eachPlayer
     @Condition eventPlayer.hasKeyboardOpened
@@ -363,7 +406,7 @@ rule "chases are bad":
         eventPlayer.additionalXOffset = eventPlayer.additionalXOffset + max(0, CURSOR_X - BORDER_BOTTOM_RIGHT_X) - max(0, BORDER_TOP_LEFT_X - CURSOR_X)
         eventPlayer.additionalYOffset = eventPlayer.additionalYOffset + max(0, CURSOR_Y - BORDER_BOTTOM_RIGHT_Y) - max(0, BORDER_TOP_LEFT_Y - CURSOR_Y)
         wait()
-    while RULE_CONDITION
+    while RULE_CONDITION*/
 
 
 rule "Close menu":
@@ -371,6 +414,8 @@ rule "Close menu":
     @Condition (not eventPlayer.isDummy()) == true
     @Condition (not eventPlayer.hasKeyboardOpened) == true
     
+    stopChasingVariable(eventPlayer.additionalXOffset)
+    stopChasingVariable(eventPlayer.additionalYOffset)
     eventPlayer.clearStatusEffect(Status.PHASED_OUT)
     eventPlayer.setAimSpeed(100)
     eventPlayer.additionalXOffset = 0
@@ -422,7 +467,7 @@ rule "Press key":
                         eventPlayer.guessResults.append(GuessResult.BAD)
                         eventPlayer.kbKeysGuesses[eventPlayer.kbKeys.strIndex(eventPlayer.currentGuess.charAt(eventPlayer.i))] max= GuessResult.BAD
 
-                    wait(0.5)
+                    wait(0.25)
                 eventPlayer.guesses.append(eventPlayer.currentGuess)
                 eventPlayer.currentGuess = ""
             else:

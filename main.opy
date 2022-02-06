@@ -1,8 +1,8 @@
 
-globalvar wordToGuess = w"REINHARDT"
+globalvar wordToGuess = w"AAAAA"
 
-globalvar maxGuesses = 7
-globalvar nbLetters = 9
+globalvar maxGuesses = 6
+globalvar nbLetters = 5
 
 enum Color:
     WORDLE_GREEN = rgba(0, 80, 0, 200),
@@ -94,6 +94,7 @@ enum GuessResult:
 
 playervar guessResults = []
 playervar hasGuessedWord = false
+playervar displayedScore
 
 playervar currentGuess = ""
 playervar i
@@ -102,7 +103,15 @@ playervar mercyRegenChase = 0
 
 globalvar currentRound = 0
 globalvar nbRounds = 5
-globalvar roundDuration = 30
+globalvar roundDuration = 120
+
+enum GameStatus:
+    WAITING_FOR_PLAYERS,
+    ROUND_IN_PROGRESS,
+    ROUND_ENDED,
+    DISPLAY_SCORES,
+
+globalvar gameStatus
 
 #!include "keyboard.opy"
 #!include "words.opy"
@@ -118,7 +127,19 @@ rule "skip assemble heroes":
 rule "":
     disableGamemodeCompletion()
     wait(5)
-    createDummy(Hero.ANA, Team.ALL, 11, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
 
 
 rule "init player":
@@ -145,15 +166,48 @@ rule "stop hot on dmg":
 rule "":
     @Condition isGameInProgress()
     while currentRound < nbRounds:
+        gameStatus = GameStatus.ROUND_IN_PROGRESS
         getAllPlayers().guesses = []
         getAllPlayers().guessResults = []
         getAllPlayers().currentGuess = ""
         getAllPlayers().hasGuessedWord = false
-        bigMessage(getAllPlayers(), "Round {}/{}".format(currentRound+1, nbRounds))
+        getAllPlayers().kbKeysGuesses = []
+        bigMessage(getAllPlayers(), "Round {}/{}".format(currentRound+1, nbRounds) if currentRound+1 < nbRounds else "Final round!")
         setMatchTime(roundDuration)
         wait(roundDuration)
+        gameStatus = GameStatus.ROUND_ENDED
+        bigMessage(getAllPlayers(), "Round over")
+        wait(4)
+        gameStatus = GameStatus.DISPLAY_SCORES
+        wait(8)
         currentRound++
-    declarePlayerVictory(sorted(getAllPlayers(), lambda p: -p.getScore())[0])
+    declarePlayerVictory(sorted(getAllPlayers(), lambda p: -p.displayedScore)[0])
+
+rule "increment scores":
+    @Event eachPlayer
+    @Condition gameStatus == GameStatus.DISPLAY_SCORES
+    wait(1)
+    #floor((L-X)/(L-1) * 100)
+    chase(eventPlayer.displayedScore, eventPlayer.getScore(), duration=1.5, ChaseReeval.NONE)
+    wait(2)
+    stopChasingVariable(eventPlayer.displayedScore)
+
+
+
+#!define sortedPlayersByScore() (sorted(getAllPlayers(), lambda x: -x.displayedScore))
+
+rule "end of round huds":
+    
+    hudSubtext(getAllPlayers() if gameStatus == GameStatus.DISPLAY_SCORES else [], " \n\n\n\n\n\n\n\n", HudPosition.TOP, -750, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
+    hudHeader(getAllPlayers() if gameStatus == GameStatus.DISPLAY_SCORES else [], "Final Rankings" if currentRound >= nbRounds-1 else "Rankings so far", HudPosition.TOP, -740, rgb(
+        128 + 127 * cosDeg(getTotalTimeElapsed() * 100),
+        128 + 127 * cosDeg((getTotalTimeElapsed() * 100) + 120),
+        128 + 127 * cosDeg((getTotalTimeElapsed() * 100) + 240)
+    ) if currentRound >= nbRounds-1 else Color.SKY_BLUE, HudReeval.VISIBILITY_STRING_AND_COLOR, SpecVisibility.DEFAULT)
+    hudSubtext(getAllPlayers() if gameStatus == GameStatus.DISPLAY_SCORES else [], " \n", HudPosition.TOP, -730, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
+
+    for i in range(12):        
+        hudSubtext(getAllPlayers() if gameStatus == GameStatus.DISPLAY_SCORES and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, evalOnce(i)-500, Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.DEFAULT)
 
     
 rule "create wordle hud text":
@@ -161,7 +215,7 @@ rule "create wordle hud text":
     @Condition isGameInProgress()
     
     #current line - black bg with gray outline
-    createProgressBarInWorldText(localPlayer, 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
+    createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
         vibrationSpaces[localPlayer.vibrationLeft],
         "" if nbLetters < 1 else "■" if len(localPlayer.guesses) < maxGuesses and not localPlayer.guessResults[len(localPlayer.guesses)*nbLetters+0] else "    " ,
         "" if nbLetters < 2 else "■" if len(localPlayer.guesses) < maxGuesses and not localPlayer.guessResults[len(localPlayer.guesses)*nbLetters+1] else "    " ,
@@ -175,7 +229,7 @@ rule "create wordle hud text":
         vibrationSpaces[localPlayer.vibrationRight]
     ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * len(localPlayer.guesses)), 4, Clip.NONE, null, Color.WORDLE_BLACK, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
     
-    createProgressBarInWorldText(localPlayer, 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
+    createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
         vibrationSpaces[localPlayer.vibrationLeft],
         "" if nbLetters < 1 else "□" if len(localPlayer.guesses) < maxGuesses and not localPlayer.guessResults[len(localPlayer.guesses)*nbLetters+0] else "    " ,
         "" if nbLetters < 2 else "□" if len(localPlayer.guesses) < maxGuesses and not localPlayer.guessResults[len(localPlayer.guesses)*nbLetters+1] else "    " ,
@@ -192,7 +246,7 @@ rule "create wordle hud text":
     for i in range(maxGuesses):
 
         #empty - transparent gray outline
-        createProgressBarInWorldText(localPlayer, 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
+        createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
             "" if nbLetters < 1 else "□" if len(localPlayer.guesses) < evalOnce(i) and not localPlayer.guessResults[evalOnce(i)*nbLetters+0] else "    " ,
             "" if nbLetters < 2 else "□" if len(localPlayer.guesses) < evalOnce(i) and not localPlayer.guessResults[evalOnce(i)*nbLetters+1] else "    " ,
             "" if nbLetters < 3 else "□" if len(localPlayer.guesses) < evalOnce(i) and not localPlayer.guessResults[evalOnce(i)*nbLetters+2] else "    " ,
@@ -205,7 +259,7 @@ rule "create wordle hud text":
         ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_OUTLINE_EMPTY, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
         
         #Good = green
-        createProgressBarInWorldText(localPlayer, 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
+        createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
             "" if nbLetters < 1 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+0] == GuessResult.GOOD else "    " ,
             "" if nbLetters < 2 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+1] == GuessResult.GOOD else "    " ,
             "" if nbLetters < 3 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+2] == GuessResult.GOOD else "    " ,
@@ -218,7 +272,7 @@ rule "create wordle hud text":
         ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_GREEN, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
         
         #Bad = gray
-        createProgressBarInWorldText(localPlayer, 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
+        createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
             "" if nbLetters < 1 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+0] == GuessResult.BAD else "    " ,
             "" if nbLetters < 2 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+1] == GuessResult.BAD else "    " ,
             "" if nbLetters < 3 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+2] == GuessResult.BAD else "    " ,
@@ -231,7 +285,7 @@ rule "create wordle hud text":
         ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_GRAY, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
         
         #Wrong place = yellow
-        createProgressBarInWorldText(localPlayer, 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
+        createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
             "" if nbLetters < 1 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+0] == GuessResult.WRONG_PLACE else "    " ,
             "" if nbLetters < 2 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+1] == GuessResult.WRONG_PLACE else "    " ,
             "" if nbLetters < 3 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+2] == GuessResult.WRONG_PLACE else "    " ,
@@ -244,7 +298,7 @@ rule "create wordle hud text":
         ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_YELLOW, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
 
         wait()
-        createProgressBarInWorldText(localPlayer, 10, " \n\n\n\n\n\n\n\n\n\n\n\n\n{}{}  {}  {}  {}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
+        createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, " \n\n\n\n\n\n\n\n\n\n\n\n\n{}{}  {}  {}  {}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
             vibrationLetterSpaces[localPlayer.vibrationLeft] if len(localPlayer.guesses) == evalOnce(i) else "",
             "\&fullwidth_space;" if len(localPlayer.guesses) < evalOnce(i) else localPlayer.guesses[evalOnce(i)].charAt(0) if len(localPlayer.guesses) > evalOnce(i) else ([localPlayer.currentGuess.charAt(0)] or ["\&fullwidth_space;"]),
             "\&fullwidth_space;" if len(localPlayer.guesses) < evalOnce(i) else localPlayer.guesses[evalOnce(i)].charAt(1) if len(localPlayer.guesses) > evalOnce(i) else ([localPlayer.currentGuess.charAt(1)] or ["\&fullwidth_space;"]),
@@ -264,7 +318,7 @@ rule "create wordle hud text":
 
     hudText(localPlayer, localPlayer.errorMsg or [""], "\z", "\z", HudPosition.TOP, -10, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
     hudSubtext(localPlayer, " \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", HudPosition.TOP, -8, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
-    hudText(localPlayer, "Press {} to enter/exit keyboard".format("[{}]".format(buttonString(Button.INTERACT)) if strContains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buttonString(Button.INTERACT).charAt(0)) else buttonString(Button.INTERACT)) if not localPlayer.hasKeyboardOpened and not localPlayer.hasGuessedWord and len(localPlayer.guesses) < maxGuesses else "", "\z", "\z", HudPosition.TOP, -7, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
+    hudText(localPlayer, "Press {} to enter/exit keyboard".format("[{}]".format(buttonString(Button.INTERACT)) if strContains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buttonString(Button.INTERACT).charAt(0)) else buttonString(Button.INTERACT)) if not localPlayer.hasKeyboardOpened and not localPlayer.hasGuessedWord and len(localPlayer.guesses) < maxGuesses and gameStatus == GameStatus.ROUND_IN_PROGRESS else "", "\z", "\z", HudPosition.TOP, -7, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
     hudSubtext(localPlayer, " \n\n\n\n\n\n\n", HudPosition.TOP, -6, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
 
     #top left instructions
