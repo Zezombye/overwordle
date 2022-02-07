@@ -103,7 +103,7 @@ playervar mercyRegenChase = 0
 
 globalvar currentRound = 0
 globalvar nbRounds = 5
-globalvar roundDuration = 120
+globalvar roundDuration = 30
 
 enum GameStatus:
     WAITING_FOR_PLAYERS,
@@ -174,7 +174,11 @@ rule "":
         getAllPlayers().kbKeysGuesses = []
         bigMessage(getAllPlayers(), "Round {}/{}".format(currentRound+1, nbRounds) if currentRound+1 < nbRounds else "Final round!")
         setMatchTime(roundDuration)
-        wait(roundDuration)
+        disableAnnouncer()
+        wait(roundDuration-15)
+        setMatchTime(15)
+        enableAnnouncer()
+        wait(15)
         gameStatus = GameStatus.ROUND_ENDED
         bigMessage(getAllPlayers(), "Round over")
         wait(4)
