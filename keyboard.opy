@@ -80,7 +80,7 @@ playervar kbLayout = KbLayout.AZERTY
 
 rule "":
     @Event eachPlayer
-    print("{}: {}".format(eventPlayer, eventPlayer.getHorizontalFacingAngle()))
+    #print("{}: {}".format(eventPlayer, eventPlayer.getHorizontalFacingAngle()))
 
 /*rule "debug hud":
     @Event eachPlayer

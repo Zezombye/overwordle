@@ -1,7 +1,9 @@
 
 globalvar wordToGuess = w"AAAAA"
 
-globalvar maxGuesses = 6
+#!define WORKSHOP_SETTING_CATEGORY ""
+
+globalvar maxGuesses = createWorkshopSetting(int[4:7], WORKSHOP_SETTING_CATEGORY, "Number of guesses", 6, 0)
 globalvar nbLetters = 5
 
 enum Color:
@@ -21,33 +23,6 @@ enum Color:
 
 #!define VERSION "1.0"
 #!define CODE "FX999"
-
-#!define LETTER_A 0
-#!define LETTER_B 1
-#!define LETTER_C 2
-#!define LETTER_D 3
-#!define LETTER_E 4
-#!define LETTER_F 5
-#!define LETTER_G 6
-#!define LETTER_H 7
-#!define LETTER_I 8
-#!define LETTER_J 9
-#!define LETTER_K 10
-#!define LETTER_L 11
-#!define LETTER_M 12
-#!define LETTER_N 13
-#!define LETTER_O 14
-#!define LETTER_P 15
-#!define LETTER_Q 16
-#!define LETTER_R 17
-#!define LETTER_S 18
-#!define LETTER_T 19
-#!define LETTER_U 20
-#!define LETTER_V 21
-#!define LETTER_W 22
-#!define LETTER_X 23
-#!define LETTER_Y 24
-#!define LETTER_Z 25
 
 playervar guesses = [
     /*w"ABCDEFGHI",
@@ -92,7 +67,12 @@ enum GuessResult:
     WRONG_PLACE,
     GOOD
 
-playervar guessResults = []
+playervar guessResults = [
+    [GuessResult.BAD, GuessResult.WRONG_PLACE, GuessResult.GOOD, GuessResult.GOOD, GuessResult.WRONG_PLACE],
+    [GuessResult.BAD, GuessResult.WRONG_PLACE, GuessResult.GOOD, GuessResult.GOOD, GuessResult.WRONG_PLACE],
+    [GuessResult.BAD, GuessResult.WRONG_PLACE, GuessResult.GOOD, GuessResult.GOOD, GuessResult.WRONG_PLACE],
+    [GuessResult.BAD, GuessResult.WRONG_PLACE, GuessResult.GOOD, GuessResult.GOOD, GuessResult.WRONG_PLACE],
+]
 playervar hasGuessedWord = false
 playervar displayedScore
 
@@ -114,7 +94,7 @@ enum GameStatus:
 globalvar gameStatus
 
 #!include "keyboard.opy"
-#!include "words.opy"
+##!include "words.opy"
 #!include "settings.opy"
 #!include "welcomeScreen.opy"
 
@@ -140,6 +120,9 @@ rule "":
     createDummy(Hero.ANA, Team.ALL, -1, null, null)
     createDummy(Hero.ANA, Team.ALL, -1, null, null)
     createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    createDummy(Hero.ANA, Team.ALL, -1, null, null)
 
 
 rule "init player":
@@ -148,6 +131,61 @@ rule "init player":
     @Condition eventPlayer.hasSpawned()
     eventPlayer.setStatusEffect(null, Status.UNKILLABLE, 9999)
     chase(eventPlayer.mercyRegenChase, 9999, rate=1, ChaseReeval.DESTINATION_AND_RATE)
+
+    print(getNumberOfTextIds())
+
+    /*for eventPlayer.i in range(0, GuessResult.GOOD+1):
+        createInWorldText(getAllPlayers(), "{}\n{}\n{}\n{}\n{}\n{}\n{}".format(
+            "{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[0][0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[0][1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[0][2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[0][3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[0][4] == evalOnce(eventPlayer.i) else "    "
+            ),
+            "{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[1][0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[1][1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[1][2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[1][3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[1][4] == evalOnce(eventPlayer.i) else "    "
+            ),
+            "{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[2][0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[2][1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[2][2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[2][3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[2][4] == evalOnce(eventPlayer.i) else "    "
+            ),
+            "{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[3][0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[3][1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[3][2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[3][3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[3][4] == evalOnce(eventPlayer.i) else "    "
+            ),
+            "{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[4][0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[4][1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[4][2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[4][3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[4][4] == evalOnce(eventPlayer.i) else "    "
+            ),
+            "{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[5][0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[5][1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[5][2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[5][3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[5][4] == evalOnce(eventPlayer.i) else "    "
+            ),
+            "{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[6][0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[6][1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[6][2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[6][3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[6][4] == evalOnce(eventPlayer.i) else "    "
+            )
+        ), eventPlayer, 2, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, [Color.WORDLE_BLACK, Color.WORDLE_GRAY, Color.WORDLE_YELLOW, Color.WORDLE_GREEN][evalOnce(eventPlayer.i)], SpecVisibility.DEFAULT)*/
 
 rule "regen":
     @Event eachPlayer
@@ -202,16 +240,16 @@ rule "increment scores":
 
 rule "end of round huds":
     
-    hudSubtext(getAllPlayers() if gameStatus == GameStatus.DISPLAY_SCORES else [], " \n\n\n\n\n\n\n\n", HudPosition.TOP, -750, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
-    hudHeader(getAllPlayers() if gameStatus == GameStatus.DISPLAY_SCORES else [], "Final Rankings" if currentRound >= nbRounds-1 else "Rankings so far", HudPosition.TOP, -740, rgb(
+    hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen else [], " \n\n\n\n\n\n\n\n", HudPosition.TOP, -750, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
+    hudHeader(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen else [], "Final Rankings" if currentRound >= nbRounds-1 else "Rankings so far", HudPosition.TOP, -740, rgb(
         128 + 127 * cosDeg(getTotalTimeElapsed() * 100),
         128 + 127 * cosDeg((getTotalTimeElapsed() * 100) + 120),
         128 + 127 * cosDeg((getTotalTimeElapsed() * 100) + 240)
     ) if currentRound >= nbRounds-1 else Color.SKY_BLUE, HudReeval.VISIBILITY_STRING_AND_COLOR, SpecVisibility.DEFAULT)
-    hudSubtext(getAllPlayers() if gameStatus == GameStatus.DISPLAY_SCORES else [], " \n", HudPosition.TOP, -730, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
+    hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen else [], " \n", HudPosition.TOP, -730, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
 
     for i in range(12):        
-        hudSubtext(getAllPlayers() if gameStatus == GameStatus.DISPLAY_SCORES and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, evalOnce(i)-500, Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.DEFAULT)
+        hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, evalOnce(i)-500, Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.DEFAULT)
 
     
 rule "create wordle hud text":
