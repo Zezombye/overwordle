@@ -6,16 +6,16 @@ playervar welcomeScreenHold
 
 rule "display tutorial & end of round hud":
 
-    #hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen else [], " \n\n\n\n\n\n\n\n", HudPosition.TOP, -750, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
+    #hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen else [], " \n\n\n\n\n\n\n\n", HudPosition.TOP, -750, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.NEVER)
     /*hudHeader(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen else [], "Final Rankings" if currentRound >= nbRounds-1 else "Rankings so far", HudPosition.TOP, -740, rgb(
         128 + 127 * cosDeg(getTotalTimeElapsed() * 100),
         128 + 127 * cosDeg((getTotalTimeElapsed() * 100) + 120),
         128 + 127 * cosDeg((getTotalTimeElapsed() * 100) + 240)
-    ) if currentRound >= nbRounds-1 else Color.SKY_BLUE, HudReeval.VISIBILITY_STRING_AND_COLOR, SpecVisibility.DEFAULT)*/
-    #hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen else [], " \n", HudPosition.TOP, -730, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
+    ) if currentRound >= nbRounds-1 else Color.SKY_BLUE, HudReeval.VISIBILITY_STRING_AND_COLOR, SpecVisibility.NEVER)*/
+    #hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen else [], " \n", HudPosition.TOP, -730, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.NEVER)
 
     /*for i in range(12):        
-        hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, evalOnce(i)-500, Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.DEFAULT)*/
+        hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, evalOnce(i)-500, Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.NEVER)*/
 
 
     hudSubtext(localPlayer if not localPlayer.hasPassedWelcomeScreen or gameStatus == GameStatus.DISPLAY_SCORES else null, " \n\n\n" if not localPlayer.hasPassedWelcomeScreen else " \n\n\n\n\n\n\n\n", HudPosition.TOP, -100.5 if not localPlayer.hasPassedWelcomeScreen else -750, Color.WHITE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.NEVER)
@@ -61,10 +61,10 @@ rule "display tutorial & end of round hud":
     progressBarHud(localPlayer if not localPlayer.hasPassedWelcomeScreen else null, localPlayer.welcomeScreenHold*100, "Hold {} to join the game".format("[{}]".format(buttonString(Button.JUMP)) if strContains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buttonString(Button.JUMP).charAt(0)) else buttonString(Button.JUMP)), HudPosition.TOP, -93, Color.ORANGE, Color.ORANGE, ProgressHudReeval.VISIBILITY_AND_VALUES, SpecVisibility.NEVER)
 
     i = 10
-    hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, evalOnce(i)-500, Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.DEFAULT)
+    hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, evalOnce(i)-500, Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.NEVER)
 
     i = 11
-    hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, evalOnce(i)-500, Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.DEFAULT)
+    hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, evalOnce(i)-500, Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.NEVER)
     
 
 

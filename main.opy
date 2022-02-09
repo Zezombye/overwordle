@@ -165,7 +165,7 @@ rule "init player":
                 "■" if eventPlayer.guessResults[6*nbLetters+3] == evalOnce(eventPlayer.i) else "    ",
                 "■" if eventPlayer.guessResults[6*nbLetters+4] == evalOnce(eventPlayer.i) else "    "
             )
-        ), eventPlayer, 2, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, [Color.WORDLE_GRAY, Color.WORDLE_YELLOW, Color.WORDLE_GREEN][evalOnce(eventPlayer.i)-1], SpecVisibility.DEFAULT)
+        ), eventPlayer, 2, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, [Color.WORDLE_GRAY, Color.WORDLE_YELLOW, Color.WORDLE_GREEN][evalOnce(eventPlayer.i)-1], SpecVisibility.NEVER)
 
 rule "regen":
     @Event eachPlayer
@@ -234,7 +234,7 @@ rule "create wordle hud text":
         "" if nbLetters < 8 else "■" if len(localPlayer.guesses) < maxGuesses and not localPlayer.guessResults[len(localPlayer.guesses)*nbLetters+7] else "    " ,
         "" if nbLetters < 9 else "■" if len(localPlayer.guesses) < maxGuesses and not localPlayer.guessResults[len(localPlayer.guesses)*nbLetters+8] else "    " ,
         vibrationSpaces[localPlayer.vibrationRight]
-    ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * len(localPlayer.guesses)), 4, Clip.NONE, null, Color.WORDLE_BLACK, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
+    ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * len(localPlayer.guesses)), 4, Clip.NONE, null, Color.WORDLE_BLACK, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.NEVER)
     
     createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
         vibrationSpaces[localPlayer.vibrationLeft],
@@ -248,7 +248,7 @@ rule "create wordle hud text":
         "" if nbLetters < 8 else "□" if len(localPlayer.guesses) < maxGuesses and not localPlayer.guessResults[len(localPlayer.guesses)*nbLetters+7] else "    " ,
         "" if nbLetters < 9 else "□" if len(localPlayer.guesses) < maxGuesses and not localPlayer.guessResults[len(localPlayer.guesses)*nbLetters+8] else "    " ,
         vibrationSpaces[localPlayer.vibrationRight]
-    ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * len(localPlayer.guesses)), 4, Clip.NONE, null, Color.WORDLE_OUTLINE if len(localPlayer.guesses) < maxGuesses-1 else Color.WORDLE_OUTLINE_LAST, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
+    ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * len(localPlayer.guesses)), 4, Clip.NONE, null, Color.WORDLE_OUTLINE if len(localPlayer.guesses) < maxGuesses-1 else Color.WORDLE_OUTLINE_LAST, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.NEVER)
 
     for i in range(maxGuesses):
 
@@ -263,7 +263,7 @@ rule "create wordle hud text":
             "" if nbLetters < 7 else "□" if len(localPlayer.guesses) < evalOnce(i) and not localPlayer.guessResults[evalOnce(i)*nbLetters+6] else "    " ,
             "" if nbLetters < 8 else "□" if len(localPlayer.guesses) < evalOnce(i) and not localPlayer.guessResults[evalOnce(i)*nbLetters+7] else "    " ,
             "" if nbLetters < 9 else "□" if len(localPlayer.guesses) < evalOnce(i) and not localPlayer.guessResults[evalOnce(i)*nbLetters+8] else "    " 
-        ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_OUTLINE_EMPTY, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
+        ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_OUTLINE_EMPTY, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.NEVER)
         
         #Good = green
         createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
@@ -276,7 +276,7 @@ rule "create wordle hud text":
             "" if nbLetters < 7 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+6] == GuessResult.GOOD else "    " ,
             "" if nbLetters < 8 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+7] == GuessResult.GOOD else "    " ,
             "" if nbLetters < 9 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+8] == GuessResult.GOOD else "    " 
-        ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_GREEN, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
+        ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_GREEN, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.NEVER)
         
         #Bad = gray
         createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
@@ -289,7 +289,7 @@ rule "create wordle hud text":
             "" if nbLetters < 7 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+6] == GuessResult.BAD else "    " ,
             "" if nbLetters < 8 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+7] == GuessResult.BAD else "    " ,
             "" if nbLetters < 9 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+8] == GuessResult.BAD else "    " 
-        ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_GRAY, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
+        ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_GRAY, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.NEVER)
         
         #Wrong place = yellow
         createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
@@ -302,7 +302,7 @@ rule "create wordle hud text":
             "" if nbLetters < 7 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+6] == GuessResult.WRONG_PLACE else "    " ,
             "" if nbLetters < 8 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+7] == GuessResult.WRONG_PLACE else "    " ,
             "" if nbLetters < 9 else "■" if localPlayer.guessResults[evalOnce(i)*nbLetters+8] == GuessResult.WRONG_PLACE else "    " 
-        ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_YELLOW, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
+        ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 4, Clip.NONE, null, Color.WORDLE_YELLOW, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.NEVER)
 
         wait()
         createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, " \n\n\n\n\n\n\n\n\n\n\n\n\n{}{}  {}  {}  {}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
@@ -317,26 +317,26 @@ rule "create wordle hud text":
             "" if nbLetters < 8 else "\u2004\u2004{}".format("\&fullwidth_space;" if len(localPlayer.guesses) < evalOnce(i) else localPlayer.guesses[evalOnce(i)].charAt(7) if len(localPlayer.guesses) > evalOnce(i) else ([localPlayer.currentGuess.charAt(7)] or ["\&fullwidth_space;"])),
             "" if nbLetters < 9 else "\u2004\u2004{}".format("\&fullwidth_space;" if len(localPlayer.guesses) < evalOnce(i) else localPlayer.guesses[evalOnce(i)].charAt(8) if len(localPlayer.guesses) > evalOnce(i) else ([localPlayer.currentGuess.charAt(8)] or ["\&fullwidth_space;"])),
             vibrationLetterSpaces[localPlayer.vibrationRight] if len(localPlayer.guesses) == evalOnce(i) else ""
-        ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 2, Clip.NONE, rgba(0,0,0,0), rgb(0xd7+0, 0xda+0, 0xdc+0), ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
+        ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * evalOnce(i)), 2, Clip.NONE, rgba(0,0,0,0), rgb(0xd7+0, 0xda+0, 0xdc+0), ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.NEVER)
         wait()
     
 
 
     #error message
 
-    hudText([true], localPlayer.errorMsg if localPlayer.errorMsg else "Sorry, this gamemode does not support spectating." if localPlayer == null else "", "\z", "\z", HudPosition.TOP, -10, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
-    hudSubtext(localPlayer, " \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", HudPosition.TOP, -8, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
-    hudText(localPlayer, "Press {} to enter/exit keyboard".format("[{}]".format(buttonString(Button.INTERACT)) if strContains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buttonString(Button.INTERACT).charAt(0)) else buttonString(Button.INTERACT)) if not localPlayer.hasKeyboardOpened and not localPlayer.hasGuessedWord and len(localPlayer.guesses) < maxGuesses and gameStatus == GameStatus.ROUND_IN_PROGRESS else "", "\z", "\z", HudPosition.TOP, -7, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
-    hudSubtext(localPlayer, " \n\n\n\n\n\n\n", HudPosition.TOP, -6, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
+    hudText([true], localPlayer.errorMsg if localPlayer.errorMsg else "Sorry, this gamemode does not support spectating." if localPlayer.i == 0 else "", "\z", "\z", HudPosition.TOP, -10 if localPlayer.i != 0 else -1000, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.ALWAYS)
+    hudSubtext(localPlayer, " \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", HudPosition.TOP, -8, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.NEVER)
+    hudText(localPlayer, "Press {} to enter/exit keyboard".format("[{}]".format(buttonString(Button.INTERACT)) if strContains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buttonString(Button.INTERACT).charAt(0)) else buttonString(Button.INTERACT)) if not localPlayer.hasKeyboardOpened and not localPlayer.hasGuessedWord and len(localPlayer.guesses) < maxGuesses and gameStatus == GameStatus.ROUND_IN_PROGRESS else "", "\z", "\z", HudPosition.TOP, -7, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.NEVER)
+    hudSubtext(localPlayer, " \n\n\n\n\n\n\n", HudPosition.TOP, -6, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.NEVER)
 
     #top left instructions
-    hudText(localPlayer.hasPassedWelcomeScreen, "   Overwordle   \n\n\n", null, "by Zezombye", HudPosition.LEFT, -10, Color.PURPLE, Color.PURPLE, Color.AQUA, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
-    hudSubtext(localPlayer.hasPassedWelcomeScreen, "ѝ"VERSION" | discord.gg/YP544CH | code: "CODE, HudPosition.RIGHT, -10, Color.ORANGE, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
-    hudText(localPlayer.hasPassedWelcomeScreen, "", " ", " • Green = right place                                                                                                                                                              ", HudPosition.RIGHT, -9, null, null, Color.KB_GREEN, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
-    hudText(localPlayer.hasPassedWelcomeScreen, "", null, " • Yellow = wrong place                                                                                                                                                              ", HudPosition.RIGHT, -8, null, null, Color.KB_YELLOW, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
-    hudText(localPlayer.hasPassedWelcomeScreen, "", null, " • Gray = wrong letter                                                                                                                                                              ", HudPosition.RIGHT, -7, null, null, Color.GRAY, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
+    hudText(localPlayer.hasPassedWelcomeScreen, "   Overwordle   \n\n\n", null, "by Zezombye", HudPosition.LEFT, -10, Color.PURPLE, Color.PURPLE, Color.AQUA, HudReeval.VISIBILITY, SpecVisibility.NEVER)
+    hudSubtext(localPlayer.hasPassedWelcomeScreen, "ѝ"VERSION" | discord.gg/YP544CH | code: "CODE, HudPosition.RIGHT, -10, Color.ORANGE, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.NEVER)
+    hudText(localPlayer.hasPassedWelcomeScreen, "", " ", " • Green = right place                                                                                                                                                              ", HudPosition.RIGHT, -9, null, null, Color.KB_GREEN, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.NEVER)
+    hudText(localPlayer.hasPassedWelcomeScreen, "", null, " • Yellow = wrong place                                                                                                                                                              ", HudPosition.RIGHT, -8, null, null, Color.KB_YELLOW, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.NEVER)
+    hudText(localPlayer.hasPassedWelcomeScreen, "", null, " • Gray = wrong letter                                                                                                                                                              ", HudPosition.RIGHT, -7, null, null, Color.GRAY, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.NEVER)
 
-    #hudText(localPlayer, "", " ", " ", HudPosition.TOP, 999 if localPlayer.errorMsg else -9, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
-    #createProgressBarInWorldText(localPlayer, 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n■■■■■\n■■■■■\n■■■■■\n■■■■■\n■■■■■\n■■■■■\n\n\n\n\n", updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection() * 100), 999, Clip.NONE, rgba(0,0,0,0), Color.GREEN, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.DEFAULT)
+    #hudText(localPlayer, "", " ", " ", HudPosition.TOP, 999 if localPlayer.errorMsg else -9, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.NEVER)
+    #createProgressBarInWorldText(localPlayer, 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n■■■■■\n■■■■■\n■■■■■\n■■■■■\n■■■■■\n■■■■■\n\n\n\n\n", updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection() * 100), 999, Clip.NONE, rgba(0,0,0,0), Color.GREEN, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.NEVER)
 
 
