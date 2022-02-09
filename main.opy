@@ -1,9 +1,11 @@
 
-globalvar wordToGuess = w"AAAAA"
+globalvar wordToGuess = w"HANZO"
 
 #!define WORKSHOP_SETTING_CATEGORY ""
 
 globalvar maxGuesses = createWorkshopSetting(int[4:7], WORKSHOP_SETTING_CATEGORY, "Number of guesses", 6, 0)
+globalvar nbRounds = createWorkshopSetting(int[1:10], WORKSHOP_SETTING_CATEGORY, "Number of rounds", 5, 1)
+globalvar roundDuration = createWorkshopSetting(int[60:600], WORKSHOP_SETTING_CATEGORY, "Round duration (in seconds)", 180, 1)
 globalvar nbLetters = 5
 
 enum Color:
@@ -67,12 +69,7 @@ enum GuessResult:
     WRONG_PLACE,
     GOOD
 
-playervar guessResults = [
-    [GuessResult.BAD, GuessResult.WRONG_PLACE, GuessResult.GOOD, GuessResult.GOOD, GuessResult.WRONG_PLACE],
-    [GuessResult.BAD, GuessResult.WRONG_PLACE, GuessResult.GOOD, GuessResult.GOOD, GuessResult.WRONG_PLACE],
-    [GuessResult.BAD, GuessResult.WRONG_PLACE, GuessResult.GOOD, GuessResult.GOOD, GuessResult.WRONG_PLACE],
-    [GuessResult.BAD, GuessResult.WRONG_PLACE, GuessResult.GOOD, GuessResult.GOOD, GuessResult.WRONG_PLACE],
-]
+playervar guessResults = []
 playervar hasGuessedWord = false
 playervar displayedScore
 
@@ -82,8 +79,6 @@ playervar hasPassedWelcomeScreen = false
 playervar mercyRegenChase = 0
 
 globalvar currentRound = 0
-globalvar nbRounds = 5
-globalvar roundDuration = 30
 
 enum GameStatus:
     WAITING_FOR_PLAYERS,
@@ -105,24 +100,11 @@ rule "skip assemble heroes":
     setMatchTime(0)
 
 rule "":
+    #print(getNumberOfTextIds())
     disableGamemodeCompletion()
     wait(5)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
-    createDummy(Hero.ANA, Team.ALL, -1, null, null)
+    for i in range(12):
+        createDummy(getAllHeroes()[i], Team.ALL, i, null, null)
 
 
 rule "init player":
@@ -132,60 +114,58 @@ rule "init player":
     eventPlayer.setStatusEffect(null, Status.UNKILLABLE, 9999)
     chase(eventPlayer.mercyRegenChase, 9999, rate=1, ChaseReeval.DESTINATION_AND_RATE)
 
-    print(getNumberOfTextIds())
-
-    /*for eventPlayer.i in range(0, GuessResult.GOOD+1):
-        createInWorldText(getAllPlayers(), "{}\n{}\n{}\n{}\n{}\n{}\n{}".format(
-            "{}{}{}{}{}".format(
-                "■" if eventPlayer.guessResults[0][0] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[0][1] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[0][2] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[0][3] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[0][4] == evalOnce(eventPlayer.i) else "    "
+    for eventPlayer.i in range(GuessResult.BAD, GuessResult.GOOD+1):
+        createInWorldText(getAllPlayers(), "{}{}{}{}{}{}{}".format(
+            "" if len(eventPlayer.guesses) <= 0 else "{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[0*nbLetters+0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[0*nbLetters+1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[0*nbLetters+2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[0*nbLetters+3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[0*nbLetters+4] == evalOnce(eventPlayer.i) else "    "
             ),
-            "{}{}{}{}{}".format(
-                "■" if eventPlayer.guessResults[1][0] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[1][1] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[1][2] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[1][3] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[1][4] == evalOnce(eventPlayer.i) else "    "
+            "" if len(eventPlayer.guesses) <= 1 else "\n{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[1*nbLetters+0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[1*nbLetters+1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[1*nbLetters+2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[1*nbLetters+3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[1*nbLetters+4] == evalOnce(eventPlayer.i) else "    "
             ),
-            "{}{}{}{}{}".format(
-                "■" if eventPlayer.guessResults[2][0] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[2][1] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[2][2] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[2][3] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[2][4] == evalOnce(eventPlayer.i) else "    "
+            "" if len(eventPlayer.guesses) <= 2 else "\n{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[2*nbLetters+0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[2*nbLetters+1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[2*nbLetters+2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[2*nbLetters+3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[2*nbLetters+4] == evalOnce(eventPlayer.i) else "    "
             ),
-            "{}{}{}{}{}".format(
-                "■" if eventPlayer.guessResults[3][0] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[3][1] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[3][2] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[3][3] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[3][4] == evalOnce(eventPlayer.i) else "    "
+            "" if len(eventPlayer.guesses) <= 3 else "\n{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[3*nbLetters+0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[3*nbLetters+1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[3*nbLetters+2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[3*nbLetters+3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[3*nbLetters+4] == evalOnce(eventPlayer.i) else "    "
             ),
-            "{}{}{}{}{}".format(
-                "■" if eventPlayer.guessResults[4][0] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[4][1] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[4][2] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[4][3] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[4][4] == evalOnce(eventPlayer.i) else "    "
+            "" if len(eventPlayer.guesses) <= 4 else "\n{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[4*nbLetters+0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[4*nbLetters+1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[4*nbLetters+2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[4*nbLetters+3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[4*nbLetters+4] == evalOnce(eventPlayer.i) else "    "
             ),
-            "{}{}{}{}{}".format(
-                "■" if eventPlayer.guessResults[5][0] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[5][1] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[5][2] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[5][3] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[5][4] == evalOnce(eventPlayer.i) else "    "
+            "" if len(eventPlayer.guesses) <= 5 else "\n{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[5*nbLetters+0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[5*nbLetters+1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[5*nbLetters+2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[5*nbLetters+3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[5*nbLetters+4] == evalOnce(eventPlayer.i) else "    "
             ),
-            "{}{}{}{}{}".format(
-                "■" if eventPlayer.guessResults[6][0] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[6][1] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[6][2] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[6][3] == evalOnce(eventPlayer.i) else "    ",
-                "■" if eventPlayer.guessResults[6][4] == evalOnce(eventPlayer.i) else "    "
+            "" if len(eventPlayer.guesses) <= 6 else "\n{}{}{}{}{}".format(
+                "■" if eventPlayer.guessResults[6*nbLetters+0] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[6*nbLetters+1] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[6*nbLetters+2] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[6*nbLetters+3] == evalOnce(eventPlayer.i) else "    ",
+                "■" if eventPlayer.guessResults[6*nbLetters+4] == evalOnce(eventPlayer.i) else "    "
             )
-        ), eventPlayer, 2, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, [Color.WORDLE_BLACK, Color.WORDLE_GRAY, Color.WORDLE_YELLOW, Color.WORDLE_GREEN][evalOnce(eventPlayer.i)], SpecVisibility.DEFAULT)*/
+        ), eventPlayer, 2, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, [Color.WORDLE_GRAY, Color.WORDLE_YELLOW, Color.WORDLE_GREEN][evalOnce(eventPlayer.i)-1], SpecVisibility.DEFAULT)
 
 rule "regen":
     @Event eachPlayer
@@ -219,6 +199,8 @@ rule "":
         wait(15)
         gameStatus = GameStatus.ROUND_ENDED
         bigMessage(getAllPlayers(), "Round over")
+        /*for i in range(12):
+            getAllPlayers()[i].addToScore(random.randint(1, 30))*/
         wait(4)
         gameStatus = GameStatus.DISPLAY_SCORES
         wait(8)
@@ -235,23 +217,6 @@ rule "increment scores":
     stopChasingVariable(eventPlayer.displayedScore)
 
 
-
-#!define sortedPlayersByScore() (sorted(getAllPlayers(), lambda x: -x.displayedScore))
-
-rule "end of round huds":
-    
-    hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen else [], " \n\n\n\n\n\n\n\n", HudPosition.TOP, -750, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
-    hudHeader(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen else [], "Final Rankings" if currentRound >= nbRounds-1 else "Rankings so far", HudPosition.TOP, -740, rgb(
-        128 + 127 * cosDeg(getTotalTimeElapsed() * 100),
-        128 + 127 * cosDeg((getTotalTimeElapsed() * 100) + 120),
-        128 + 127 * cosDeg((getTotalTimeElapsed() * 100) + 240)
-    ) if currentRound >= nbRounds-1 else Color.SKY_BLUE, HudReeval.VISIBILITY_STRING_AND_COLOR, SpecVisibility.DEFAULT)
-    hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen else [], " \n", HudPosition.TOP, -730, Color.WHITE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
-
-    for i in range(12):        
-        hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, evalOnce(i)-500, Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.DEFAULT)
-
-    
 rule "create wordle hud text":
 
     @Condition isGameInProgress()
@@ -356,16 +321,16 @@ rule "create wordle hud text":
         wait()
     
 
+
     #error message
 
-    hudText(localPlayer, localPlayer.errorMsg or [""], "\z", "\z", HudPosition.TOP, -10, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
+    hudText([true], localPlayer.errorMsg if localPlayer.errorMsg else "Sorry, this gamemode does not support spectating." if localPlayer == null else "", "\z", "\z", HudPosition.TOP, -10, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
     hudSubtext(localPlayer, " \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", HudPosition.TOP, -8, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
     hudText(localPlayer, "Press {} to enter/exit keyboard".format("[{}]".format(buttonString(Button.INTERACT)) if strContains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buttonString(Button.INTERACT).charAt(0)) else buttonString(Button.INTERACT)) if not localPlayer.hasKeyboardOpened and not localPlayer.hasGuessedWord and len(localPlayer.guesses) < maxGuesses and gameStatus == GameStatus.ROUND_IN_PROGRESS else "", "\z", "\z", HudPosition.TOP, -7, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
     hudSubtext(localPlayer, " \n\n\n\n\n\n\n", HudPosition.TOP, -6, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.DEFAULT)
 
     #top left instructions
-    hudHeader(localPlayer.hasPassedWelcomeScreen, "   Overwordle   \n\n\n", HudPosition.LEFT, -10, Color.PURPLE, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
-    #hudText(localPlayer.hasPassedWelcomeScreen, "Overwordle", null, "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ", HudPosition.RIGHT, -10, Color.PURPLE, null, null, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
+    hudText(localPlayer.hasPassedWelcomeScreen, "   Overwordle   \n\n\n", null, "by Zezombye", HudPosition.LEFT, -10, Color.PURPLE, Color.PURPLE, Color.AQUA, HudReeval.VISIBILITY, SpecVisibility.DEFAULT)
     hudSubtext(localPlayer.hasPassedWelcomeScreen, "ѝ"VERSION" | discord.gg/YP544CH | code: "CODE, HudPosition.RIGHT, -10, Color.ORANGE, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
     hudText(localPlayer.hasPassedWelcomeScreen, "", " ", " • Green = right place                                                                                                                                                              ", HudPosition.RIGHT, -9, null, null, Color.KB_GREEN, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
     hudText(localPlayer.hasPassedWelcomeScreen, "", null, " • Yellow = wrong place                                                                                                                                                              ", HudPosition.RIGHT, -8, null, null, Color.KB_YELLOW, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)

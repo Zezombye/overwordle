@@ -361,21 +361,20 @@ rule "Display keyboard":
 
 
 rule "Create menu cursor":
-    @Event eachPlayer
-    createInWorldText(eventPlayer if eventPlayer.hasKeyboardOpened else null, "\&top_left_arrow;", 
+    createInWorldText(localPlayer.hasKeyboardOpened, "\&top_left_arrow;", 
     updateEveryTick(
-        eventPlayer.getEyePosition() 
+        localPlayer.getEyePosition() 
         + (
             100 * (
-                max(min(CURSOR_X, BORDER_BOTTOM_RIGHT_X), BORDER_TOP_LEFT_X)
+                max(min(CURSOR_X_LOCAL, BORDER_BOTTOM_RIGHT_X), BORDER_TOP_LEFT_X)
                 * (
-                    crossProduct(eventPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))
+                    crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))
                 )
                 + (
-                    -1 * max(min(CURSOR_Y, BORDER_BOTTOM_RIGHT_Y), BORDER_TOP_LEFT_Y)
-                    * (angleToDirection(horizontalAngleOfDirection(eventPlayer.getFacingDirection()), verticalAngleOfDirection(eventPlayer.getFacingDirection()) - 90))
+                    -1 * max(min(CURSOR_Y_LOCAL, BORDER_BOTTOM_RIGHT_Y), BORDER_TOP_LEFT_Y)
+                    * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))
                 ) 
-                + 3 * eventPlayer.getFacingDirection()
+                + 3 * localPlayer.getFacingDirection()
             )
         )
     ), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_STRING_AND_COLOR, Color.ORANGE, SpecVisibility.DEFAULT)
