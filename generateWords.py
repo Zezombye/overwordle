@@ -11,32 +11,32 @@ validWords = possibleTargetWords + ["aahed", "aalii", "aargh", "aarti", "abaca",
 validWords = list(set(validWords))
 
 alphabet = {
-    "a": "0",
-    "b": "1",
-    "c": "2",
-    "d": "3",
-    "e": "4",
-    "f": "5",
-    "g": "6",
-    "h": "7",
-    "i": "9",
-    "j": "&",
-    "k": "~",
-    "l": "'",
-    "m": "[",
-    "n": "]",
-    "o": "(",
-    "p": ")",
-    "q": "-",
-    "r": "|",
-    "s": "`",
-    "t": "_",
-    "u": "^",
-    "v": "*",
-    "w": "%",
-    "x": "!",
-    "y": ":",
-    "z": ".",
+    "a": "&",
+    "b": "~",
+    "c": ",",
+    "d": "#",
+    "e": "'",
+    "f": "(",
+    "g": "[",
+    "h": "-",
+    "i": "|",
+    "j": "`",
+    "k": "_",
+    "l": "^",
+    "m": "@",
+    "n": ")",
+    "o": "]",
+    "p": "+",
+    "q": "=",
+    "r": "}",
+    "s": "$",
+    "t": "*",
+    "u": "%",
+    "v": "!",
+    "w": ":",
+    "x": ";",
+    "y": ".",
+    "z": "?",
 }
 
 def generateAllWords():
@@ -57,7 +57,9 @@ def generateAllWords():
             if len(result[letter][letter2]) > 510:
                 result[letter][letter2] = [result[letter][letter2][0:510], result[letter][letter2][510:]]
             elif len(result[letter][letter2]) == 0:
-                result[letter][letter2] = None
+                result[letter][letter2] = []
+            else:
+                result[letter][letter2] = [result[letter][letter2]]
 
     import json
     print(json.dumps(result, indent=4))
@@ -76,6 +78,7 @@ possibleTargetWords = [
 for w in possibleTargetWords]
 
 possibleTargetWords = sorted(possibleTargetWords)
+print(len(possibleTargetWords))
 
 possibleTargetWords = [
     possibleTargetWords[:int(len(possibleTargetWords)/3)],
@@ -85,10 +88,11 @@ possibleTargetWords = [
 ]
 
 #print(possibleTargetWords)
+print(len(validWords))
 generateAllWords()
-"""
-test = 5839631.5
 
+test = 4411058
+"""
 print(
     "abcdefghijklmnopqrstuvwxyz"[int(test%((26**5)/2)/((26**4)/2))],
     "abcdefghijklmnopqrstuvwxyz"[int(test%((26**4)/2)/((26**3)/2))],

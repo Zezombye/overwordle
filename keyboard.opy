@@ -156,6 +156,7 @@ rule "guesses exhausted":
         smallMessage(eventPlayer, "Ran out of guesses!")
     elif eventPlayer.hasGuessedWord:
         smallMessage(eventPlayer, "Guessed it! +{} points".format(10+(maxGuesses - len(eventPlayer.guesses))**2))
+        eventPlayer.setUltCharge(100)
         eventPlayer.addToScore(10+(maxGuesses - len(eventPlayer.guesses))**2)
 
 
@@ -433,18 +434,60 @@ def vibrate():
 
 rule "Press key":
     @Event eachPlayer
-    @Condition eventPlayer.hasKeyboardOpened
-    @Condition eventPlayer.isHoldingButton(Button.PRIMARY_FIRE)
+    @Condition eventPlayer.hasKeyboardOpened and eventPlayer.isHoldingButton(Button.PRIMARY_FIRE) or eventPlayer.forceKeyboardValidation == true
+    if eventPlayer.forceKeyboardValidation:
+        goto validWord
     eventPlayer.selectedKeyboardKey = getKeyboardSelectedKey()
     if eventPlayer.selectedKeyboardKey and not (eventPlayer.kbLayout == KbLayout.AZERTY and eventPlayer.selectedKeyboardKey == 27) and not (eventPlayer.kbLayout != KbLayout.AZERTY and eventPlayer.selectedKeyboardKey == 20):
         if eventPlayer.selectedKeyboardKey == 31:
             if strLen(eventPlayer.currentGuess) == nbLetters:
+                if isHardModeEnabled:
+                    for eventPlayer.i in range(28):
+                        if eventPlayer.kbKeysGuesses[eventPlayer.i] == GuessResult.WRONG_PLACE:
+                            if not strContains(eventPlayer.currentGuess, eventPlayer.kbKeys.charAt(eventPlayer.i)):
+                                eventPlayer.errorMsg = "Guess must contain '{}'".format(normalAlphabet.charAt(fullwidthAlphabet.strIndex(eventPlayer.kbKeys.charAt(eventPlayer.i))))
+                                #eventPlayer.errorMsg = "Guess '{}' must contain '{}'".format(eventPlayer.currentGuess, eventPlayer.kbKeys.charAt(eventPlayer.i))
+                                vibrate()
+                                eventPlayer.errorMsg = null
+                                return
+                        if eventPlayer.i%5 == 0:
+                            wait()
+                    for eventPlayer.i in range(5):
+                        if eventPlayer.validLetterBools[eventPlayer.i]:
+                            if eventPlayer.currentGuess.charAt(eventPlayer.i) != wordToGuess.charAt(eventPlayer.i):
+                                eventPlayer.errorMsg = "{} letter must be '{}'".format(ordinals[eventPlayer.i], normalAlphabet.charAt(fullwidthAlphabet.strIndex(wordToGuess.charAt(eventPlayer.i))))
+                                vibrate()
+                                eventPlayer.errorMsg = null
+                                return
+
+                wait()
+                if validWords[fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(1))] != []:
+                    for eventPlayer.i in range(len(validWords[fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(1))])):
+                        for eventPlayer.j in range(strLen(validWords[fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(1))][eventPlayer.i])/3):
+                            if (
+                                validWords[fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(1))][eventPlayer.i].charAt(eventPlayer.j*3+0) == compressionAlphabet.charAt(fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(2)))
+                                and
+                                validWords[fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(1))][eventPlayer.i].charAt(eventPlayer.j*3+1) == compressionAlphabet.charAt(fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(3)))
+                                and 
+                                validWords[fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(1))][eventPlayer.i].charAt(eventPlayer.j*3+2) == compressionAlphabet.charAt(fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(4)))
+                            ):
+                                goto validWord
+                wait()
+
+                eventPlayer.errorMsg = "Word does not exist"
+                vibrate()
+                eventPlayer.errorMsg = null
+                return
+
+                validWord:
+                eventPlayer.forceKeyboardValidation = false
                 if eventPlayer.currentGuess == wordToGuess:
                     eventPlayer.hasGuessedWord = true
                 for eventPlayer.i in range(nbLetters):
                     if eventPlayer.currentGuess.charAt(eventPlayer.i) == wordToGuess.charAt(eventPlayer.i):
                         eventPlayer.guessResults.append(GuessResult.GOOD)
                         eventPlayer.kbKeysGuesses[eventPlayer.kbKeys.strIndex(eventPlayer.currentGuess.charAt(eventPlayer.i))] = GuessResult.GOOD
+                        eventPlayer.validLetterBools[eventPlayer.i] = true
                     elif not strContains(wordToGuess, eventPlayer.currentGuess.charAt(eventPlayer.i)):
                         eventPlayer.guessResults.append(GuessResult.BAD)
                         eventPlayer.kbKeysGuesses[eventPlayer.kbKeys.strIndex(eventPlayer.currentGuess.charAt(eventPlayer.i))] = GuessResult.BAD

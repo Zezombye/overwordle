@@ -1,11 +1,26 @@
 
-globalvar wordToGuess = w"HANZO"
+#!obfuscate noStringObfuscation noInspectorObfuscation
 
-#!define WORKSHOP_SETTING_CATEGORY ""
+#!define VERSION "1.0"
+#!define CODE "FX999"
+
+globalvar wordToGuess = w""
+globalvar wordToGuessNormal = ""
+
+globalvar fullwidthAlphabet = w"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+globalvar normalAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+globalvar compressionAlphabet = "&~,#'([-|`_^@)]+=}$*%!:;.?"
+globalvar ordinals = ["1st", "2nd", "3rd", "4th", "5th"]
+
+playervar forceKeyboardValidation = false
+
+#!define WORKSHOP_SETTING_CATEGORY "OverWordle "VERSION" by Zezombye | code: "CODE"\nJoin the discord for feedback: discord.gg/YP544CH\nEnjoy the game :)\n"
 
 globalvar maxGuesses = createWorkshopSetting(int[4:7], WORKSHOP_SETTING_CATEGORY, "Number of guesses", 6, 0)
-globalvar nbRounds = createWorkshopSetting(int[1:10], WORKSHOP_SETTING_CATEGORY, "Number of rounds", 5, 1)
-globalvar roundDuration = createWorkshopSetting(int[60:600], WORKSHOP_SETTING_CATEGORY, "Round duration (in seconds)", 180, 1)
+globalvar nbRounds = createWorkshopSetting(int[1:20], WORKSHOP_SETTING_CATEGORY, "Number of rounds", 5, 1)
+globalvar roundDuration = createWorkshopSetting(int[60:600], WORKSHOP_SETTING_CATEGORY, "Round duration (in seconds)", 180, 2)
+globalvar isHardModeEnabled = createWorkshopSetting(bool, WORKSHOP_SETTING_CATEGORY, "Enable hard mode (revealed hints must be used)", false, 3)
+globalvar startWithLastRoundWord = createWorkshopSetting(bool, WORKSHOP_SETTING_CATEGORY, "Start round with last round's word", false, 3)
 globalvar nbLetters = 5
 
 enum Color:
@@ -23,8 +38,6 @@ enum Color:
     KB_SELECTION = Color.BLUE,
 
 
-#!define VERSION "1.0"
-#!define CODE "FX999"
 
 playervar guesses = [
     /*w"ABCDEFGHI",
@@ -69,12 +82,15 @@ enum GuessResult:
     WRONG_PLACE,
     GOOD
 
+playervar isPlayer = true #to check if player is spec
 playervar guessResults = []
 playervar hasGuessedWord = false
 playervar displayedScore
+playervar validLetterBools = []
 
 playervar currentGuess = ""
 playervar i
+playervar j
 playervar hasPassedWelcomeScreen = false
 playervar mercyRegenChase = 0
 
@@ -88,8 +104,8 @@ enum GameStatus:
 
 globalvar gameStatus
 
+#!include "words.opy"
 #!include "keyboard.opy"
-##!include "words.opy"
 #!include "settings.opy"
 #!include "welcomeScreen.opy"
 
@@ -97,14 +113,21 @@ globalvar gameStatus
 
 rule "skip assemble heroes":
     @Condition isAssemblingHeroes()
-    setMatchTime(0)
+    setMatchTime(10)
 
 rule "":
     #print(getNumberOfTextIds())
+    /*print("Word to guess: {}".format(wordToGuessNormal))
+    print("charat0 index: {}".format(fullwidthAlphabet.strIndex(hostPlayer.currentGuess.charAt(0))))
+    print("charat1 index: {}".format(fullwidthAlphabet.strIndex(hostPlayer.currentGuess.charAt(1))))
+    print("string validwords: {}".format(validWords[fullwidthAlphabet.strIndex(hostPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(hostPlayer.currentGuess.charAt(1))][hostPlayer.i]))
+    print("validword char: {}".format(validWords[fullwidthAlphabet.strIndex(hostPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(hostPlayer.currentGuess.charAt(1))][hostPlayer.i].charAt(hostPlayer.j*3+0)))
+    print("guess char: {}".format(compressionAlphabet.charAt(fullwidthAlphabet.strIndex(hostPlayer.currentGuess.charAt(2)))))*/
     disableGamemodeCompletion()
+    disableScoring()
     wait(5)
-    for i in range(12):
-        createDummy(getAllHeroes()[i], Team.ALL, i, null, null)
+    /*for i in range(12):
+        createDummy(getAllHeroes()[i], Team.ALL, i, null, null)*/
 
 
 rule "init player":
@@ -187,18 +210,44 @@ rule "":
         gameStatus = GameStatus.ROUND_IN_PROGRESS
         getAllPlayers().guesses = []
         getAllPlayers().guessResults = []
-        getAllPlayers().currentGuess = ""
+        getAllPlayers().validLetterBools = []
+        if startWithLastRoundWord and currentRound > 0:
+            getAllPlayers().currentGuess = wordToGuess
+            getAllPlayers().forceKeyboardValidation = true
+            getAllPlayers().selectedKeyboardKey = 31
+        else:
+            getAllPlayers().currentGuess = ""
+        wordToGuess = possibleTargetWords[random.randint(0, 2)][random.randint(0, 774)]
+        wordToGuessNormal = "{}{}{}{}{}".format(
+            normalAlphabet.charAt(floor(wordToGuess%((26**5)/2)/((26**4)/2))),
+            normalAlphabet.charAt(floor(wordToGuess%((26**4)/2)/((26**3)/2))),
+            normalAlphabet.charAt(floor(wordToGuess%((26**3)/2)/((26**2)/2))),
+            normalAlphabet.charAt(floor(wordToGuess%((26**2)/2)/((26**1)/2))),
+            normalAlphabet.charAt(floor(wordToGuess%((26**1)/2)/((26**0)/2)))
+        )
+        wordToGuess = "{}{}{}{}{}".format(
+            fullwidthAlphabet.charAt(floor(wordToGuess%((26**5)/2)/((26**4)/2))),
+            fullwidthAlphabet.charAt(floor(wordToGuess%((26**4)/2)/((26**3)/2))),
+            fullwidthAlphabet.charAt(floor(wordToGuess%((26**3)/2)/((26**2)/2))),
+            fullwidthAlphabet.charAt(floor(wordToGuess%((26**2)/2)/((26**1)/2))),
+            fullwidthAlphabet.charAt(floor(wordToGuess%((26**1)/2)/((26**0)/2)))
+        )
         getAllPlayers().hasGuessedWord = false
         getAllPlayers().kbKeysGuesses = []
+        wait()
         bigMessage(getAllPlayers(), "Round {}/{}".format(currentRound+1, nbRounds) if currentRound+1 < nbRounds else "Final round!")
         setMatchTime(roundDuration)
         disableAnnouncer()
-        wait(roundDuration-15)
+        wait()
+        waitUntil(getMatchTime() <= 15, roundDuration-15)
         setMatchTime(15)
         enableAnnouncer()
-        wait(15)
+        waitUntil(getMatchTime() == 0, 15)
         gameStatus = GameStatus.ROUND_ENDED
-        bigMessage(getAllPlayers(), "Round over")
+        if any([not p.hasGuessedWord for p in getAllPlayers() if p.hasPassedWelcomeScreen]):
+            bigMessage(getAllPlayers(), "Round over! The word was: {}".format(wordToGuessNormal))
+        else:
+            bigMessage(getAllPlayers(), "Everyone guessed the word!")
         /*for i in range(12):
             getAllPlayers()[i].addToScore(random.randint(1, 30))*/
         wait(4)
@@ -206,6 +255,13 @@ rule "":
         wait(8)
         currentRound++
     declarePlayerVictory(sorted(getAllPlayers(), lambda p: -p.displayedScore)[0])
+
+rule "end round early if all players finished":
+    @Condition gameStatus == GameStatus.ROUND_IN_PROGRESS
+    @Condition getMatchTime() > 15
+    @Condition len([p for p in getAllPlayers() if p.hasPassedWelcomeScreen]) > 0
+    @Condition all([p.hasGuessedWord or len(p.guesses) >= maxGuesses for p in getAllPlayers() if p.hasPassedWelcomeScreen])
+    setMatchTime(15)
 
 rule "increment scores":
     @Event eachPlayer
@@ -218,8 +274,6 @@ rule "increment scores":
 
 
 rule "create wordle hud text":
-
-    @Condition isGameInProgress()
     
     #current line - black bg with gray outline
     createProgressBarInWorldText(localPlayer if gameStatus == GameStatus.ROUND_IN_PROGRESS or gameStatus == GameStatus.ROUND_ENDED else [], 10, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{}{}{}{}{}{}{}{}{}{}{}\n\n\n\n\n\n\n\n\n\n".format(
@@ -321,16 +375,16 @@ rule "create wordle hud text":
         wait()
     
 
-
     #error message
 
-    hudText([true], localPlayer.errorMsg if localPlayer.errorMsg else "Sorry, this gamemode does not support spectating." if localPlayer.i == 0 else "", "\z", "\z", HudPosition.TOP, -10 if localPlayer.i != 0 else -1000, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.ALWAYS)
+    hudText([true], localPlayer.errorMsg if localPlayer.errorMsg else "Sorry, this gamemode does not support spectating." if not localPlayer.isPlayer else "", "\z", "\z", HudPosition.TOP, -10 if localPlayer.isPlayer else -1000, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.ALWAYS)
     hudSubtext(localPlayer, " \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", HudPosition.TOP, -8, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.NEVER)
     hudText(localPlayer, "Press {} to enter/exit keyboard".format("[{}]".format(buttonString(Button.INTERACT)) if strContains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buttonString(Button.INTERACT).charAt(0)) else buttonString(Button.INTERACT)) if not localPlayer.hasKeyboardOpened and not localPlayer.hasGuessedWord and len(localPlayer.guesses) < maxGuesses and gameStatus == GameStatus.ROUND_IN_PROGRESS else "", "\z", "\z", HudPosition.TOP, -7, Color.RED, null, null, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.NEVER)
     hudSubtext(localPlayer, " \n\n\n\n\n\n\n", HudPosition.TOP, -6, Color.RED, HudReeval.VISIBILITY_SORT_ORDER_AND_STRING, SpecVisibility.NEVER)
 
     #top left instructions
     hudText(localPlayer.hasPassedWelcomeScreen, "   Overwordle   \n\n\n", null, "by Zezombye", HudPosition.LEFT, -10, Color.PURPLE, Color.PURPLE, Color.AQUA, HudReeval.VISIBILITY, SpecVisibility.NEVER)
+    hudSubtext(localPlayer.hasPassedWelcomeScreen, "Hard mode is on.\nRevealed hints must be used" if isHardModeEnabled else "", HudPosition.LEFT, -9, Color.ROSE, HudReeval.VISIBILITY, SpecVisibility.NEVER)
     hudSubtext(localPlayer.hasPassedWelcomeScreen, "ѝ"VERSION" | discord.gg/YP544CH | code: "CODE, HudPosition.RIGHT, -10, Color.ORANGE, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.NEVER)
     hudText(localPlayer.hasPassedWelcomeScreen, "", " ", " • Green = right place                                                                                                                                                              ", HudPosition.RIGHT, -9, null, null, Color.KB_GREEN, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.NEVER)
     hudText(localPlayer.hasPassedWelcomeScreen, "", null, " • Yellow = wrong place                                                                                                                                                              ", HudPosition.RIGHT, -8, null, null, Color.KB_YELLOW, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.NEVER)
