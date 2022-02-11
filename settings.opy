@@ -6,6 +6,8 @@ settings {
     },
     "lobby": {
         "allowPlayersInQueue": true,
+        "mapRotation": "afterGame",
+        "returnToLobby": "never",
     },
     "gamemodes": {
         "ffa": {
