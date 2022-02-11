@@ -3,14 +3,14 @@
 
 #!include "warning.opy"
 
-#!define VERSION "1.0"
+#!define VERSION "1.1"
 #!define CODE "FX999"
 
 globalvar wordToGuess = w""
 globalvar wordToGuessNormal = ""
 
 globalvar fullwidthAlphabet = w"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-globalvar normalAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+globalvar normalAlphabet = "󠁁󠁂󠁃󠁄󠁅󠁆󠁇󠁈󠁉󠁊󠁋󠁌󠁍󠁎󠁏󠁐󠁑󠁒󠁓󠁔󠁕󠁖󠁗󠁘󠁙󠁚"
 globalvar compressionAlphabet = "&~,#'([-|`_^@)]+=}$*%!:;.?"
 globalvar ordinals = ["1st", "2nd", "3rd", "4th", "5th"]
 
@@ -117,12 +117,7 @@ rule "skip assemble heroes":
     @Condition isAssemblingHeroes()
     setMatchTime(10)
 
-
-rule "game not started":
-    @Condition isWaitingForPlayers()
     
-    hudHeader(getAllPlayers() if isWaitingForPlayers() else null, "Waiting for players to start ({}/{})".format(getNumberOfPlayers(Team.ALL), 4) if getNumberOfPlayers(Team.ALL) < 4 else "Starting the game...", HudPosition.TOP, 3, Color.WHITE, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
-
 rule "enough players - start game":
     @Condition isWaitingForPlayers()
     @Condition getNumberOfPlayers(Team.ALL) >= 4
@@ -138,6 +133,8 @@ rule "":
     print("guess char: {}".format(compressionAlphabet.charAt(fullwidthAlphabet.strIndex(hostPlayer.currentGuess.charAt(2)))))*/
     disableGamemodeCompletion()
     disableScoring()
+    disableInspector()
+    hudHeader(getAllPlayers() if isWaitingForPlayers() else null, "Waiting for players to start ({}/{})".format(getNumberOfPlayers(Team.ALL), 4) if getNumberOfPlayers(Team.ALL) < 4 else "Starting the game...", HudPosition.TOP, 3, Color.WHITE, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
     wait(5)
     /*for i in range(12):
         createDummy(getAllHeroes()[i], Team.ALL, i, null, null)*/
