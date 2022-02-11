@@ -1,5 +1,7 @@
 
-#!obfuscate noStringObfuscation noInspectorObfuscation
+##!obfuscate noStringObfuscation noInspectorObfuscation noConstantObfuscation
+
+#!include "warning.opy"
 
 #!define VERSION "1.0"
 #!define CODE "FX999"
@@ -114,6 +116,17 @@ globalvar gameStatus
 rule "skip assemble heroes":
     @Condition isAssemblingHeroes()
     setMatchTime(10)
+
+
+rule "game not started":
+    @Condition isWaitingForPlayers()
+    
+    hudHeader(getAllPlayers() if isWaitingForPlayers() else null, "Waiting for players to start ({}/{})".format(getNumberOfPlayers(Team.ALL), 4) if getNumberOfPlayers(Team.ALL) < 4 else "Starting the game...", HudPosition.TOP, 3, Color.WHITE, HudReeval.VISIBILITY_AND_STRING, SpecVisibility.DEFAULT)
+
+rule "enough players - start game":
+    @Condition isWaitingForPlayers()
+    @Condition getNumberOfPlayers(Team.ALL) >= 4
+    startGamemode()
 
 rule "":
     #print(getNumberOfTextIds())
@@ -302,7 +315,7 @@ rule "create wordle hud text":
         "" if nbLetters < 8 else "□" if len(localPlayer.guesses) < maxGuesses and not localPlayer.guessResults[len(localPlayer.guesses)*nbLetters+7] else "    " ,
         "" if nbLetters < 9 else "□" if len(localPlayer.guesses) < maxGuesses and not localPlayer.guessResults[len(localPlayer.guesses)*nbLetters+8] else "    " ,
         vibrationSpaces[localPlayer.vibrationRight]
-    ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * len(localPlayer.guesses)), 4, Clip.NONE, null, Color.WORDLE_OUTLINE if len(localPlayer.guesses) < maxGuesses-1 else Color.WORDLE_OUTLINE_LAST, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.NEVER)
+    ), updateEveryTick(localPlayer.getEyePosition() + localPlayer.getFacingDirection()  + angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) + 90) * 0.095 * len(localPlayer.guesses)), 4, Clip.NONE, null, Color.WORDLE_OUTLINE if len(localPlayer.guesses) < maxGuesses-1 or localPlayer.hasGuessedWord else Color.WORDLE_OUTLINE_LAST, ProgressWorldTextReeval.VISIBILITY_POSITION_VALUES_AND_COLOR, SpecVisibility.NEVER)
 
     for i in range(maxGuesses):
 

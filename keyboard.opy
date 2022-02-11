@@ -158,6 +158,9 @@ rule "guesses exhausted":
         smallMessage(eventPlayer, "Guessed it! +{} points".format(10+(maxGuesses - len(eventPlayer.guesses))**2))
         eventPlayer.setUltCharge(100)
         eventPlayer.addToScore(10+(maxGuesses - len(eventPlayer.guesses))**2)
+        playEffect(getAllPlayers(), DynamicEffect.GOOD_PICKUP_EFFECT, Color.GREEN, eventPlayer, 99)
+        playEffect(getAllPlayers(), DynamicEffect.RING_EXPLOSION, Color.GREEN, eventPlayer, 20)
+        
 
 
 rule "Display keyboard":
@@ -486,10 +489,12 @@ rule "Press key":
                 for eventPlayer.i in range(nbLetters):
                     if eventPlayer.currentGuess.charAt(eventPlayer.i) == wordToGuess.charAt(eventPlayer.i):
                         eventPlayer.guessResults.append(GuessResult.GOOD)
+                        playEffect(eventPlayer, DynamicEffect.BUFF_EXPLOSION_SOUND, null, eventPlayer, 200)
                         eventPlayer.kbKeysGuesses[eventPlayer.kbKeys.strIndex(eventPlayer.currentGuess.charAt(eventPlayer.i))] = GuessResult.GOOD
                         eventPlayer.validLetterBools[eventPlayer.i] = true
                     elif not strContains(wordToGuess, eventPlayer.currentGuess.charAt(eventPlayer.i)):
                         eventPlayer.guessResults.append(GuessResult.BAD)
+                        playEffect(eventPlayer, DynamicEffect.DEBUFF_IMPACT_SOUND, null, eventPlayer, 200)
                         eventPlayer.kbKeysGuesses[eventPlayer.kbKeys.strIndex(eventPlayer.currentGuess.charAt(eventPlayer.i))] = GuessResult.BAD
                     elif (
                         #nb of letter in target word
@@ -504,10 +509,12 @@ rule "Press key":
                         > 0
                     ):
                         eventPlayer.guessResults.append(GuessResult.WRONG_PLACE)
+                        playEffect(eventPlayer, DynamicEffect.RING_EXPLOSION_SOUND, null, eventPlayer, 200)
                         eventPlayer.kbKeysGuesses[eventPlayer.kbKeys.strIndex(eventPlayer.currentGuess.charAt(eventPlayer.i))] max= GuessResult.WRONG_PLACE
                     else:
                         #double/triple letter with no equivalent
                         eventPlayer.guessResults.append(GuessResult.BAD)
+                        playEffect(eventPlayer, DynamicEffect.DEBUFF_IMPACT_SOUND, null, eventPlayer, 200)
                         eventPlayer.kbKeysGuesses[eventPlayer.kbKeys.strIndex(eventPlayer.currentGuess.charAt(eventPlayer.i))] max= GuessResult.BAD
 
                     wait(2.5/nbLetters)
