@@ -1,5 +1,7 @@
 # OverWordle
 
+![](https://i.imgur.com/iDRx00N.jpeg)
+
 Port of https://www.powerlanguage.co.uk/wordle/ in Overwatch!
 
 Made with https://github.com/Zezombye/overpy
