@@ -475,6 +475,9 @@ rule "Press key":
                                 validWords[fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(1))][eventPlayer.i].charAt(eventPlayer.j*3+2) == compressionAlphabet.charAt(fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(4)))
                             ):
                                 goto validWord
+                            if eventPlayer.j%5 == 0:
+                                wait()
+                        wait()
                 wait()
 
                 eventPlayer.errorMsg = "Word does not exist"

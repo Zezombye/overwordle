@@ -3,7 +3,7 @@
 
 #!include "warning.opy"
 
-#!define VERSION "1.1"
+#!define VERSION "1.1.1"
 #!define CODE "FX999"
 
 globalvar wordToGuess = w""
