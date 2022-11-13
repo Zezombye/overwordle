@@ -1,17 +1,5 @@
 #!mainFile "main.opy"
 
-
-#Global variables
-
-globalvar CHAR_ARRAY 0
-globalvar XpositionARRAY 1
-globalvar YpositionARRAY 2
-globalvar TestIndex 3
-globalvar CharSize 4
-
-
-#Player variables
-
 playervar originalFacingDir
 playervar hasKeyboardOpened
 
@@ -359,9 +347,9 @@ rule "Display keyboard":
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, " ｎ ｅ                                                    ", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.08 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 3, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_STRING_AND_COLOR, Color.KB_SELECTION if isValueBetween(CURSOR_X_LOCAL, ENTER_TOP_LEFT_X, ENTER_BOTTOM_RIGHT_X) and isValueBetween(CURSOR_Y_LOCAL, ENTER_TOP_LEFT_Y, ENTER_BOTTOM_RIGHT_Y) else Color.KB_WHITE, SpecVisibility.DEFAULT)
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, " ｔ ｒ                                                ", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.08 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 3, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_STRING_AND_COLOR, Color.KB_SELECTION if isValueBetween(CURSOR_X_LOCAL, ENTER_TOP_LEFT_X, ENTER_BOTTOM_RIGHT_X) and isValueBetween(CURSOR_Y_LOCAL, ENTER_TOP_LEFT_Y, ENTER_BOTTOM_RIGHT_Y) else Color.KB_WHITE, SpecVisibility.DEFAULT)
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "                                \&left_arrow;", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.09 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_STRING_AND_COLOR,  Color.KB_SELECTION if isValueBetween(CURSOR_X_LOCAL, BACKSPACE_TOP_LEFT_X, BACKSPACE_BOTTOM_RIGHT_X) and isValueBetween(CURSOR_Y_LOCAL, BACKSPACE_TOP_LEFT_Y, BACKSPACE_BOTTOM_RIGHT_Y) else Color.KB_WHITE, SpecVisibility.DEFAULT)
-    createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "              ｜￣￣｜                     ｜￣￣｜    ", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
-    createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "  ￣￣￣                                 ￣￣￣    ", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
-    createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "  ＿＿＿                                 ＿＿＿    ", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
+    createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "              ｜￣￣｜                     ｜￣￣｜    \z", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
+    createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "  ￣￣￣                                ￣￣￣    \z", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
+    createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "  ＿＿＿                                ＿＿＿    \z", updateEveryTick(localPlayer.getEyePosition() + (100 * (((-0.1 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.BLACK, SpecVisibility.DEFAULT)
 
 
 rule "Create menu cursor":

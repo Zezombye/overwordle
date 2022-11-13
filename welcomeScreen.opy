@@ -1,6 +1,6 @@
 #!mainFile "main.opy"
 
-playervar welcomeScreenHold
+playervar welcomeScreenHold = 1
 
 #!define sortedPlayersByScore() (sorted(getAllPlayers(), lambda x: -x.displayedScore))
 
@@ -58,7 +58,7 @@ rule "display tutorial & end of round hud":
     i = 9
     hudSubtext(localPlayer if not localPlayer.hasPassedWelcomeScreen or gameStatus == GameStatus.DISPLAY_SCORES and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, " \n\n" if not localPlayer.hasPassedWelcomeScreen else "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, -93.5 if not localPlayer.hasPassedWelcomeScreen else evalOnce(i)-500, Color.RED if not localPlayer.hasPassedWelcomeScreen else Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.NEVER)
 
-    progressBarHud(localPlayer if not localPlayer.hasPassedWelcomeScreen else null, localPlayer.welcomeScreenHold*100, "Hold {} to join the game".format("[{}]".format(buttonString(Button.JUMP)) if strContains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buttonString(Button.JUMP).charAt(0)) else buttonString(Button.JUMP)), HudPosition.TOP, -93, Color.ORANGE, Color.ORANGE, ProgressHudReeval.VISIBILITY_AND_VALUES, SpecVisibility.NEVER)
+    progressBarHud(localPlayer if not localPlayer.hasPassedWelcomeScreen else null, (1-localPlayer.welcomeScreenHold)*100, "Hold {} to join the game".format("[{}]".format(buttonString(Button.JUMP)) if strContains("ABCDEFGHIJKLMNOPQRSTUVWXYZ", buttonString(Button.JUMP).charAt(0)) else buttonString(Button.JUMP)), HudPosition.TOP, -93, Color.ORANGE, Color.ORANGE, ProgressHudReeval.VISIBILITY_AND_VALUES, SpecVisibility.NEVER)
 
     i = 10
     hudSubtext(localPlayer if gameStatus == GameStatus.DISPLAY_SCORES and localPlayer.hasPassedWelcomeScreen and getNumberOfPlayers(Team.ALL)-1 >= evalOnce(i) else null, "{}: {}".format(sortedPlayersByScore()[evalOnce(i)], sortedPlayersByScore()[evalOnce(i)].displayedScore), HudPosition.TOP, evalOnce(i)-500, Color.PURPLE if sortedPlayersByScore()[evalOnce(i)] == localPlayer else Color.ORANGE, HudReeval.VISIBILITY_SORT_ORDER_STRING_AND_COLOR, SpecVisibility.NEVER)
@@ -78,19 +78,22 @@ rule "hold to skip tutorial":
     @Event eachPlayer
     @Condition not eventPlayer.hasPassedWelcomeScreen
     @Condition eventPlayer.isHoldingButton(Button.JUMP)
-    chase(eventPlayer.welcomeScreenHold, 9999, rate=1, ChaseReeval.NONE)
+    chase(eventPlayer.welcomeScreenHold, 0, rate=1, ChaseReeval.NONE)
 
 rule "don't hold anymore to skip tutorial":
     @Event eachPlayer
     @Condition not eventPlayer.hasPassedWelcomeScreen
     @Condition not eventPlayer.isHoldingButton(Button.JUMP)
     stopChasingVariable(eventPlayer.welcomeScreenHold)
-    eventPlayer.welcomeScreenHold = 0
+    eventPlayer.welcomeScreenHold = 1
 
 rule "skip tutorial":
     @Event eachPlayer
-    @Condition eventPlayer.welcomeScreenHold >= 1
-    stopChasingVariable(eventPlayer.welcomeScreenHold)
-    eventPlayer.hasPassedWelcomeScreen = true
-    eventPlayer.stopCamera()
-    eventPlayer.enableHeroHud()
+    while true:
+        if eventPlayer.welcomeScreenHold <= 0:
+            stopChasingVariable(eventPlayer.welcomeScreenHold)
+            eventPlayer.hasPassedWelcomeScreen = true
+            eventPlayer.stopCamera()
+            eventPlayer.enableHeroHud()
+            return
+        wait()
