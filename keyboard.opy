@@ -35,6 +35,20 @@ playervar kbThirdRow
 #!define BORDER_BOTTOM_RIGHT_X 1.53
 #!define BORDER_BOTTOM_RIGHT_Y 2.13
 
+
+playervar selectedKeyboardKey = 0
+playervar additionalXOffset = 0
+playervar additionalYOffset = 0
+
+macro getKeyboardSelectedKey():
+    updateEveryTick((
+        [1,2,3,4,5,6,7,8,9,10][(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X)/HORIZONTAL_KEY_DISTANCE))] if KEYBOARD_TOP_LEFT_Y <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+KEY_SIDE_LENGTH and (CURSOR_X-KEYBOARD_TOP_LEFT_X)%HORIZONTAL_KEY_DISTANCE <= HORIZONTAL_KEY_DISTANCE else
+        [11,12,13,14,15,16,17,18,19,20][(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT)/HORIZONTAL_KEY_DISTANCE))] if KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE+KEY_SIDE_LENGTH and (CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT)%HORIZONTAL_KEY_DISTANCE <= HORIZONTAL_KEY_DISTANCE
+        else [21,22,23,24,25,26,27][(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT*2)/HORIZONTAL_KEY_DISTANCE))] if KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE*2 <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE*2+KEY_SIDE_LENGTH and (CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT*2)%HORIZONTAL_KEY_DISTANCE <= HORIZONTAL_KEY_DISTANCE
+        else 31 if CURSOR_X >= ENTER_TOP_LEFT_X and CURSOR_Y >= ENTER_TOP_LEFT_Y and CURSOR_X <= ENTER_BOTTOM_RIGHT_X and CURSOR_Y <= ENTER_BOTTOM_RIGHT_Y
+        else 32 if CURSOR_X >= BACKSPACE_TOP_LEFT_X and CURSOR_Y >= BACKSPACE_TOP_LEFT_Y and CURSOR_X <= BACKSPACE_BOTTOM_RIGHT_X and CURSOR_Y <= BACKSPACE_BOTTOM_RIGHT_Y else null
+    ) or [""])
+
 #!define getKeyboardSelectedKey() updateEveryTick((\
     [1,2,3,4,5,6,7,8,9,10][(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X)/HORIZONTAL_KEY_DISTANCE))] if KEYBOARD_TOP_LEFT_Y <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+KEY_SIDE_LENGTH and (CURSOR_X-KEYBOARD_TOP_LEFT_X)%HORIZONTAL_KEY_DISTANCE <= HORIZONTAL_KEY_DISTANCE else\
     [11,12,13,14,15,16,17,18,19,20][(floor((CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT)/HORIZONTAL_KEY_DISTANCE))] if KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE <= CURSOR_Y and CURSOR_Y <= KEYBOARD_TOP_LEFT_Y+VERTICAL_KEY_DISTANCE+KEY_SIDE_LENGTH and (CURSOR_X-KEYBOARD_TOP_LEFT_X-KEYBOARD_INDENT)%HORIZONTAL_KEY_DISTANCE <= HORIZONTAL_KEY_DISTANCE else\
@@ -52,9 +66,6 @@ playervar kbThirdRow
 #!define KB_KEY_ENTER 31
 #!define KB_KEY_BACKSPACE 32
 
-playervar selectedKeyboardKey = 0
-playervar additionalXOffset = 0
-playervar additionalYOffset = 0
 
 playervar kbKeys
 playervar kbKeysGuesses = []
@@ -84,6 +95,10 @@ rule "Determine keyboard layout":
     @Condition not eventPlayer.hasPassedWelcomeScreen
     @Condition eventPlayer.isHoldingButton(Button.JUMP)
     eventPlayer.startFacing(
+        #In addition to the language check, we also do a button check.
+        #The AZERTY layout uses ZQSD instead of WASD.
+        #This means if any key is bound to A or W, we can assume the player is using AZERTY.
+        #Set the angle to 30 degrees if the player is using AZERTY, 60 degrees if QWERTZ, and 90 degrees if QWERTY.
         angleToDirection(30, 0) if any([button == "A" or button == "W" for button in [
             buttonString(Button.ABILITY_1),
             buttonString(Button.ABILITY_2),
@@ -132,7 +147,7 @@ rule "Toggle keyboard":
     @Condition (not eventPlayer.isCommunicatingEmote()) == true
     @Condition len(eventPlayer.guesses) < maxGuesses
     @Condition not eventPlayer.hasGuessedWord
-    
+
     eventPlayer.hasKeyboardOpened = not eventPlayer.hasKeyboardOpened
 
 
@@ -148,7 +163,7 @@ rule "guesses exhausted":
         eventPlayer.addToScore(10+(maxGuesses - len(eventPlayer.guesses))**2)
         playEffect(getAllPlayers(), DynamicEffect.GOOD_PICKUP_EFFECT, Color.GREEN, eventPlayer, 99)
         playEffect(getAllPlayers(), DynamicEffect.RING_EXPLOSION, Color.GREEN, eventPlayer, 20)
-        
+
 
 
 rule "Display keyboard":
@@ -166,7 +181,7 @@ rule "Display keyboard":
         localPlayer.kbFirstRow.charAt(8) if localPlayer.kbKeysGuesses[8+1] == 0 else "\&fullwidth_space;",
         localPlayer.kbFirstRow.charAt(9) if localPlayer.kbKeysGuesses[9+1] == 0 else "\&fullwidth_space;"
     ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.8 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.KB_WHITE, SpecVisibility.DEFAULT)
-    
+
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, " {} {} {} {} {} {} {} {} {} {} ".format(
         localPlayer.kbFirstRow.charAt(0) if localPlayer.kbKeysGuesses[0+1] == GuessResult.BAD else "\&fullwidth_space;",
         localPlayer.kbFirstRow.charAt(1) if localPlayer.kbKeysGuesses[1+1] == GuessResult.BAD else "\&fullwidth_space;",
@@ -179,7 +194,7 @@ rule "Display keyboard":
         localPlayer.kbFirstRow.charAt(8) if localPlayer.kbKeysGuesses[8+1] == GuessResult.BAD else "\&fullwidth_space;",
         localPlayer.kbFirstRow.charAt(9) if localPlayer.kbKeysGuesses[9+1] == GuessResult.BAD else "\&fullwidth_space;"
     ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.8 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.KB_GRAY, SpecVisibility.DEFAULT)
-    
+
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, " {} {} {} {} {} {} {} {} {} {} ".format(
         localPlayer.kbFirstRow.charAt(0) if localPlayer.kbKeysGuesses[0+1] == GuessResult.GOOD else "\&fullwidth_space;",
         localPlayer.kbFirstRow.charAt(1) if localPlayer.kbKeysGuesses[1+1] == GuessResult.GOOD else "\&fullwidth_space;",
@@ -192,7 +207,7 @@ rule "Display keyboard":
         localPlayer.kbFirstRow.charAt(8) if localPlayer.kbKeysGuesses[8+1] == GuessResult.GOOD else "\&fullwidth_space;",
         localPlayer.kbFirstRow.charAt(9) if localPlayer.kbKeysGuesses[9+1] == GuessResult.GOOD else "\&fullwidth_space;"
     ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.8 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.KB_GREEN, SpecVisibility.DEFAULT)
-    
+
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, " {} {} {} {} {} {} {} {} {} {} ".format(
         localPlayer.kbFirstRow.charAt(0) if localPlayer.kbKeysGuesses[0+1] == GuessResult.WRONG_PLACE else "\&fullwidth_space;",
         localPlayer.kbFirstRow.charAt(1) if localPlayer.kbKeysGuesses[1+1] == GuessResult.WRONG_PLACE else "\&fullwidth_space;",
@@ -205,7 +220,7 @@ rule "Display keyboard":
         localPlayer.kbFirstRow.charAt(8) if localPlayer.kbKeysGuesses[8+1] == GuessResult.WRONG_PLACE else "\&fullwidth_space;",
         localPlayer.kbFirstRow.charAt(9) if localPlayer.kbKeysGuesses[9+1] == GuessResult.WRONG_PLACE else "\&fullwidth_space;"
     ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.8 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.KB_YELLOW, SpecVisibility.DEFAULT)
-    
+
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, {
         null: "",
         1: "[＿]　 　 　 　 　 　 　 　 　 ",
@@ -234,7 +249,7 @@ rule "Display keyboard":
         localPlayer.kbSecondRow.charAt(8) if localPlayer.kbKeysGuesses[8+11] == 0 else "\&fullwidth_space;",
         localPlayer.kbSecondRow.charAt(9) if localPlayer.kbKeysGuesses[9+11] == 0 else "\&fullwidth_space;"
     ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.5 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.KB_WHITE, SpecVisibility.DEFAULT)
-    
+
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "   {} {} {} {} {} {} {} {} {} {} ".format(
         localPlayer.kbSecondRow.charAt(0) if localPlayer.kbKeysGuesses[0+11] == GuessResult.BAD else "\&fullwidth_space;",
         localPlayer.kbSecondRow.charAt(1) if localPlayer.kbKeysGuesses[1+11] == GuessResult.BAD else "\&fullwidth_space;",
@@ -247,7 +262,7 @@ rule "Display keyboard":
         localPlayer.kbSecondRow.charAt(8) if localPlayer.kbKeysGuesses[8+11] == GuessResult.BAD else "\&fullwidth_space;",
         localPlayer.kbSecondRow.charAt(9) if localPlayer.kbKeysGuesses[9+11] == GuessResult.BAD else "\&fullwidth_space;"
     ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.5 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.KB_GRAY, SpecVisibility.DEFAULT)
-    
+
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "   {} {} {} {} {} {} {} {} {} {} ".format(
         localPlayer.kbSecondRow.charAt(0) if localPlayer.kbKeysGuesses[0+11] == GuessResult.GOOD else "\&fullwidth_space;",
         localPlayer.kbSecondRow.charAt(1) if localPlayer.kbKeysGuesses[1+11] == GuessResult.GOOD else "\&fullwidth_space;",
@@ -260,7 +275,7 @@ rule "Display keyboard":
         localPlayer.kbSecondRow.charAt(8) if localPlayer.kbKeysGuesses[8+11] == GuessResult.GOOD else "\&fullwidth_space;",
         localPlayer.kbSecondRow.charAt(9) if localPlayer.kbKeysGuesses[9+11] == GuessResult.GOOD else "\&fullwidth_space;"
     ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.5 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.KB_GREEN, SpecVisibility.DEFAULT)
-    
+
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "   {} {} {} {} {} {} {} {} {} {} ".format(
         localPlayer.kbSecondRow.charAt(0) if localPlayer.kbKeysGuesses[0+11] == GuessResult.WRONG_PLACE else "\&fullwidth_space;",
         localPlayer.kbSecondRow.charAt(1) if localPlayer.kbKeysGuesses[1+11] == GuessResult.WRONG_PLACE else "\&fullwidth_space;",
@@ -299,7 +314,7 @@ rule "Display keyboard":
         localPlayer.kbThirdRow.charAt(5) if localPlayer.kbKeysGuesses[5+21] == 0 else "\&fullwidth_space;",
         localPlayer.kbThirdRow.charAt(6) if localPlayer.kbKeysGuesses[6+21] == 0 else "\&fullwidth_space;"
     ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.2 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.KB_WHITE, SpecVisibility.DEFAULT)
-    
+
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "     {} {} {} {} {} {} {} \&fullwidth_space; \&fullwidth_space; \&fullwidth_space; ".format(
         localPlayer.kbThirdRow.charAt(0) if localPlayer.kbKeysGuesses[0+21] == GuessResult.BAD else "\&fullwidth_space;",
         localPlayer.kbThirdRow.charAt(1) if localPlayer.kbKeysGuesses[1+21] == GuessResult.BAD else "\&fullwidth_space;",
@@ -309,7 +324,7 @@ rule "Display keyboard":
         localPlayer.kbThirdRow.charAt(5) if localPlayer.kbKeysGuesses[5+21] == GuessResult.BAD else "\&fullwidth_space;",
         localPlayer.kbThirdRow.charAt(6) if localPlayer.kbKeysGuesses[6+21] == GuessResult.BAD else "\&fullwidth_space;"
     ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.2 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.KB_GRAY, SpecVisibility.DEFAULT)
-    
+
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "     {} {} {} {} {} {} {} \&fullwidth_space; \&fullwidth_space; \&fullwidth_space; ".format(
         localPlayer.kbThirdRow.charAt(0) if localPlayer.kbKeysGuesses[0+21] == GuessResult.GOOD else "\&fullwidth_space;",
         localPlayer.kbThirdRow.charAt(1) if localPlayer.kbKeysGuesses[1+21] == GuessResult.GOOD else "\&fullwidth_space;",
@@ -319,7 +334,7 @@ rule "Display keyboard":
         localPlayer.kbThirdRow.charAt(5) if localPlayer.kbKeysGuesses[5+21] == GuessResult.GOOD else "\&fullwidth_space;",
         localPlayer.kbThirdRow.charAt(6) if localPlayer.kbKeysGuesses[6+21] == GuessResult.GOOD else "\&fullwidth_space;"
     ), updateEveryTick(localPlayer.getEyePosition() + (100 * (-0.14 * (crossProduct(localPlayer.getFacingDirection(), angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + ((0.2 + -1.7) * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))) + 3 * localPlayer.getFacingDirection()))), 4, Clip.NONE, WorldTextReeval.VISIBILITY_POSITION_AND_STRING, Color.KB_GREEN, SpecVisibility.DEFAULT)
-    
+
     createInWorldText(localPlayer if localPlayer.hasKeyboardOpened else null, "     {} {} {} {} {} {} {} \&fullwidth_space; \&fullwidth_space; \&fullwidth_space; ".format(
         localPlayer.kbThirdRow.charAt(0) if localPlayer.kbKeysGuesses[0+21] == GuessResult.WRONG_PLACE else "\&fullwidth_space;",
         localPlayer.kbThirdRow.charAt(1) if localPlayer.kbKeysGuesses[1+21] == GuessResult.WRONG_PLACE else "\&fullwidth_space;",
@@ -353,9 +368,9 @@ rule "Display keyboard":
 
 
 rule "Create menu cursor":
-    createInWorldText(localPlayer.hasKeyboardOpened, "\&top_left_arrow;", 
+    createInWorldText(localPlayer.hasKeyboardOpened, "\&top_left_arrow;",
     updateEveryTick(
-        localPlayer.getEyePosition() 
+        localPlayer.getEyePosition()
         + (
             100 * (
                 max(min(CURSOR_X_LOCAL, BORDER_BOTTOM_RIGHT_X), BORDER_TOP_LEFT_X)
@@ -365,7 +380,7 @@ rule "Create menu cursor":
                 + (
                     -1 * max(min(CURSOR_Y_LOCAL, BORDER_BOTTOM_RIGHT_Y), BORDER_TOP_LEFT_Y)
                     * (angleToDirection(horizontalAngleOfDirection(localPlayer.getFacingDirection()), verticalAngleOfDirection(localPlayer.getFacingDirection()) - 90))
-                ) 
+                )
                 + 3 * localPlayer.getFacingDirection()
             )
         )
@@ -376,7 +391,7 @@ rule "Open menu":
     @Event eachPlayer
     @Condition (not eventPlayer.isDummy()) == true
     @Condition eventPlayer.hasKeyboardOpened == true
-    
+
     chase(eventPlayer.additionalXOffset, updateEveryTick(eventPlayer.additionalXOffset + max(0, CURSOR_X - BORDER_BOTTOM_RIGHT_X) - max(0, BORDER_TOP_LEFT_X - CURSOR_X)), rate=9999, ChaseReeval.DESTINATION_AND_RATE)
     chase(eventPlayer.additionalYOffset, updateEveryTick(eventPlayer.additionalYOffset + max(0, CURSOR_Y - BORDER_BOTTOM_RIGHT_Y) - max(0, BORDER_TOP_LEFT_Y - CURSOR_Y)), rate=9999, ChaseReeval.DESTINATION_AND_RATE)
 
@@ -403,7 +418,7 @@ rule "Close menu":
     @Event eachPlayer
     @Condition (not eventPlayer.isDummy()) == true
     @Condition (not eventPlayer.hasKeyboardOpened) == true
-    
+
     stopChasingVariable(eventPlayer.additionalXOffset)
     stopChasingVariable(eventPlayer.additionalYOffset)
     eventPlayer.stopForcingOutlineFor(getAllPlayers())
@@ -415,6 +430,7 @@ rule "Close menu":
     eventPlayer.setSecondaryFireEnabled(true)
     eventPlayer.enableHeroHud()
 
+#Simply set the vibration to a random value for 30 ticks (approx. half a second)
 def vibrate():
     for eventPlayer.i in range(30):
         eventPlayer.vibrationLeft = random.randint(0, len(vibrationSpaces)-1)
@@ -459,7 +475,7 @@ rule "Press key":
                                 validWords[fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(1))][eventPlayer.i].charAt(eventPlayer.j*3+0) == compressionAlphabet.charAt(fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(2)))
                                 and
                                 validWords[fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(1))][eventPlayer.i].charAt(eventPlayer.j*3+1) == compressionAlphabet.charAt(fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(3)))
-                                and 
+                                and
                                 validWords[fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(0))][fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(1))][eventPlayer.i].charAt(eventPlayer.j*3+2) == compressionAlphabet.charAt(fullwidthAlphabet.strIndex(eventPlayer.currentGuess.charAt(4)))
                             ):
                                 goto validWord
