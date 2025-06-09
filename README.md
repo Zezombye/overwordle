@@ -8,4 +8,6 @@ Made with https://github.com/Zezombye/overpy
 
 Play the game: https://workshop.codes/overwordle
 
-Join the discord: https://discord.gg/YP544CH
+Read about all the neat tricks I used: https://zez.dev/overwordle
+
+Note: this code isn't exactly the version used in the above article, as while writing it I realized it could be optimized much more.
